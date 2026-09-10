@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16
+    container_name: optiplant-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-optiplant}
+      POSTGRES_USER: ${POSTGRES_USER:-optiplant}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-optiplant_dev_pw}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-optiplant} -d ${POSTGRES_DB:-optiplant}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build: ./backend
+    container_name: optiplant-backend
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/optiplant}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-optiplant}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-optiplant_dev_pw}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me_0123456789_abcdefghij}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  frontend:
+    build: ./frontend
+    container_name: optiplant-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pgdata:

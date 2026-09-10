@@ -194,4 +194,62 @@ class InventarioServiceTest {
 
         assertEquals(0, inventario.getStockMinimo().compareTo(new BigDecimal("15.00")));
     }
+
+    // --- registrarIngresoPorCompra (RF-10 / RF-12) --------------------------------
+
+    @Test
+    void ingresoPorCompra_primerIngreso_costoPromedioIgualAlPrecio() {
+        InventarioSucursal inventario = inventarioCon(BigDecimal.ZERO, BigDecimal.ZERO);
+        when(inventarioRepository.findByProductoIdAndSucursalId(10L, 1L))
+                .thenReturn(java.util.Optional.of(inventario));
+        when(usuarioRepository.getReferenceById(7L)).thenReturn(Usuario.builder().id(7L).build());
+        when(inventarioRepository.save(any(InventarioSucursal.class))).thenAnswer(i -> i.getArgument(0));
+        when(movimientoRepository.save(any(MovimientoInventario.class))).thenAnswer(i -> i.getArgument(0));
+
+        inventarioService.registrarIngresoPorCompra(
+                producto, sucursal, new BigDecimal("100"), new BigDecimal("500"), 7L);
+
+        assertEquals(0, inventario.getCantidadActual().compareTo(new BigDecimal("100")));
+        assertEquals(0, inventario.getCostoPromedioPonderado().compareTo(new BigDecimal("500.00")));
+
+        ArgumentCaptor<MovimientoInventario> captor = ArgumentCaptor.forClass(MovimientoInventario.class);
+        verify(movimientoRepository).save(captor.capture());
+        assertEquals(TipoMovimiento.INGRESO, captor.getValue().getTipo());
+        assertEquals(MotivoMovimiento.COMPRA, captor.getValue().getMotivo());
+    }
+
+    @Test
+    void ingresoPorCompra_segundoIngreso_promedioPonderado() {
+        InventarioSucursal inventario = inventarioCon(new BigDecimal("100"), BigDecimal.ZERO);
+        inventario.setCostoPromedioPonderado(new BigDecimal("500"));
+        when(inventarioRepository.findByProductoIdAndSucursalId(10L, 1L))
+                .thenReturn(java.util.Optional.of(inventario));
+        when(usuarioRepository.getReferenceById(7L)).thenReturn(Usuario.builder().id(7L).build());
+        when(inventarioRepository.save(any(InventarioSucursal.class))).thenAnswer(i -> i.getArgument(0));
+        when(movimientoRepository.save(any(MovimientoInventario.class))).thenAnswer(i -> i.getArgument(0));
+
+        // (100*500 + 100*600) / 200 = 550.00
+        inventarioService.registrarIngresoPorCompra(
+                producto, sucursal, new BigDecimal("100"), new BigDecimal("600"), 7L);
+
+        assertEquals(0, inventario.getCantidadActual().compareTo(new BigDecimal("200")));
+        assertEquals(0, inventario.getCostoPromedioPonderado().compareTo(new BigDecimal("550.00")));
+    }
+
+    @Test
+    void ingresoPorCompra_redondeaCostoAHalfUp() {
+        InventarioSucursal inventario = inventarioCon(new BigDecimal("1"), BigDecimal.ZERO);
+        inventario.setCostoPromedioPonderado(new BigDecimal("100"));
+        when(inventarioRepository.findByProductoIdAndSucursalId(10L, 1L))
+                .thenReturn(java.util.Optional.of(inventario));
+        when(usuarioRepository.getReferenceById(7L)).thenReturn(Usuario.builder().id(7L).build());
+        when(inventarioRepository.save(any(InventarioSucursal.class))).thenAnswer(i -> i.getArgument(0));
+        when(movimientoRepository.save(any(MovimientoInventario.class))).thenAnswer(i -> i.getArgument(0));
+
+        // (1*100 + 2*110) / 3 = 320/3 = 106.666... -> 106.67
+        inventarioService.registrarIngresoPorCompra(
+                producto, sucursal, new BigDecimal("2"), new BigDecimal("110"), 7L);
+
+        assertEquals(0, inventario.getCostoPromedioPonderado().compareTo(new BigDecimal("106.67")));
+    }
 }

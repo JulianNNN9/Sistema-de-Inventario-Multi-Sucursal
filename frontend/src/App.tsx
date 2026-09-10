@@ -1,16 +1,33 @@
-/**
- * Fase 0.A — placeholder shell.
- * Router, AuthContext, layout and role-guarded routes arrive in Fase 0.E.
- */
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Layout } from './components/Layout';
+import { AuthProvider } from './context/AuthContext';
+import { AdminPage } from './pages/AdminPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { LoginPage } from './pages/LoginPage';
+import { NotAuthorizedPage } from './pages/NotAuthorizedPage';
+import { PrivateRoute } from './routes/PrivateRoute';
+import { RoleGuard } from './routes/RoleGuard';
+
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-800">
-      <h1 className="text-2xl font-semibold text-brand">
-        OptiPlant · Inventario Multi-Sucursal
-      </h1>
-      <p className="mt-2 text-sm text-gray-500">
-        Frontend operativo (scaffolding — Fase 0.A).
-      </p>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/403" element={<NotAuthorizedPage />} />
+
+          <Route element={<PrivateRoute />}>
+            <Route element={<Layout />}>
+              <Route index element={<DashboardPage />} />
+              <Route element={<RoleGuard allow={['ADMIN_GENERAL']} />}>
+                <Route path="admin" element={<AdminPage />} />
+              </Route>
+            </Route>
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

@@ -45,7 +45,9 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/healthz"]
+      # 127.0.0.1 (no "localhost"): en Alpine/musl "localhost" resuelve a ::1 primero
+      # y nginx solo escucha en IPv4 con la config personalizada.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/healthz"]
       interval: 15s
       timeout: 5s
       retries: 5

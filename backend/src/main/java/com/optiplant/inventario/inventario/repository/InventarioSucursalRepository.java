@@ -14,6 +14,8 @@ public interface InventarioSucursalRepository extends JpaRepository<InventarioSu
 
     boolean existsByProductoIdAndSucursalId(Long productoId, Long sucursalId);
 
+    boolean existsByProductoId(Long productoId);
+
     /** Inventario de una sucursal, paginado, con producto y sucursal ya cargados (RNF-01). */
     @EntityGraph(attributePaths = {"producto", "sucursal"})
     Page<InventarioSucursal> findBySucursalId(Long sucursalId, Pageable pageable);

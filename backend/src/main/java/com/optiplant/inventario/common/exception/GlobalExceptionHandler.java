@@ -43,6 +43,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(ConflictoEstadoException.class)
+    public ResponseEntity<ApiErrorResponse> handleConflicto(ConflictoEstadoException ex,
+                                                            HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(ValidacionException.class)
     public ResponseEntity<ApiErrorResponse> handleValidacion(ValidacionException ex,
                                                              HttpServletRequest request) {

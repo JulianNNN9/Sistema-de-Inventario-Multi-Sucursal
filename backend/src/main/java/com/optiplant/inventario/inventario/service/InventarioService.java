@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 
 /**
@@ -90,6 +91,42 @@ public class InventarioService {
                 inventario.getStockMinimo(),
                 estaBajoMinimo(inventario),
                 movimiento.getFecha());
+    }
+
+    /**
+     * Aplica el ingreso de una línea de compra recibida (RF-10): incrementa la
+     * existencia, recalcula el costo promedio ponderado (RF-12) y registra el
+     * {@code MovimientoInventario} (INGRESO / COMPRA). Pensado para orquestarse
+     * desde {@code CompraService.confirmarRecepcion} dentro de su transacción.
+     *
+     * <p>Fórmula (Sección 8.2 / Módulo 2):
+     * {@code nuevo_costo = (qty_previa * costo_previo + qty_recibida * precio_unitario) / (qty_previa + qty_recibida)}.
+     */
+    @Transactional
+    public void registrarIngresoPorCompra(Producto producto, Sucursal sucursal,
+                                          BigDecimal cantidadRecibida, BigDecimal precioUnitario,
+                                          Long responsableId) {
+        InventarioSucursal inventario = getOrCreateInventario(producto, sucursal);
+
+        BigDecimal qtyPrevia = inventario.getCantidadActual();
+        BigDecimal costoPrevio = inventario.getCostoPromedioPonderado();
+        BigDecimal qtyNueva = qtyPrevia.add(cantidadRecibida);
+        BigDecimal nuevoCosto = qtyPrevia.multiply(costoPrevio)
+                .add(cantidadRecibida.multiply(precioUnitario))
+                .divide(qtyNueva, 2, RoundingMode.HALF_UP);
+
+        inventario.setCantidadActual(qtyNueva);
+        inventario.setCostoPromedioPonderado(nuevoCosto);
+        inventarioRepository.save(inventario);
+
+        movimientoRepository.save(MovimientoInventario.builder()
+                .inventario(inventario)
+                .tipo(TipoMovimiento.INGRESO)
+                .motivo(MotivoMovimiento.COMPRA)
+                .cantidad(cantidadRecibida)
+                .fecha(Instant.now())
+                .responsable(usuarioRepository.getReferenceById(responsableId))
+                .build());
     }
 
     @Transactional(readOnly = true)

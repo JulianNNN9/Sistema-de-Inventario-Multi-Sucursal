@@ -1,5 +1,6 @@
 package com.optiplant.inventario.compra.repository;
 
+import com.optiplant.inventario.compra.dto.PurchaseOrderSummaryResponse;
 import com.optiplant.inventario.compra.entity.OrdenCompra;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,18 +19,35 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> 
     Optional<OrdenCompra> findById(Long id);
 
     /**
-     * Histórico de compras con filtros opcionales por proveedor y por producto
-     * (RF-11). Agregación/filtrado en BD y paginado (RNF-01).
+     * Histórico de compras (RF-11) con filtros opcionales por proveedor, sucursal
+     * y producto. Proyección a DTO y {@code total} agregado en base de datos,
+     * paginado (RNF-01: agregación en BD, sin traer las filas a memoria).
      */
-    @EntityGraph(attributePaths = {"proveedor", "sucursal"})
-    @Query("""
-            select o from OrdenCompra o
-            where (:supplierId is null or o.proveedor.id = :supplierId)
+    @Query(value = """
+            select new com.optiplant.inventario.compra.dto.PurchaseOrderSummaryResponse(
+                o.id, prov.id, prov.nombre, suc.id, suc.nombre, o.fecha, o.estado,
+                coalesce((select sum(d.cantidad * d.precioUnitario)
+                          from OrdenCompraDetalle d where d.orden = o), 0))
+            from OrdenCompra o
+            join o.proveedor prov
+            join o.sucursal suc
+            where (:supplierId is null or prov.id = :supplierId)
+              and (:branchId is null or suc.id = :branchId)
               and (:productId is null or exists (
-                    select 1 from OrdenCompraDetalle d
-                    where d.orden = o and d.producto.id = :productId))
+                    select 1 from OrdenCompraDetalle dp
+                    where dp.orden = o and dp.producto.id = :productId))
+            order by o.fecha desc
+            """,
+            countQuery = """
+            select count(o) from OrdenCompra o
+            where (:supplierId is null or o.proveedor.id = :supplierId)
+              and (:branchId is null or o.sucursal.id = :branchId)
+              and (:productId is null or exists (
+                    select 1 from OrdenCompraDetalle dp
+                    where dp.orden = o and dp.producto.id = :productId))
             """)
-    Page<OrdenCompra> search(@Param("supplierId") Long supplierId,
-                             @Param("productId") Long productId,
-                             Pageable pageable);
+    Page<PurchaseOrderSummaryResponse> searchSummaries(@Param("supplierId") Long supplierId,
+                                                       @Param("branchId") Long branchId,
+                                                       @Param("productId") Long productId,
+                                                       Pageable pageable);
 }

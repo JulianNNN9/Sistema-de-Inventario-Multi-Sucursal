@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Boxes, LogIn } from 'lucide-react';
+import { Button, Input } from '../components/ui';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { useAuth } from '../hooks/useAuth';
 import type { ApiError } from '../types/api';
@@ -31,50 +34,54 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-lg bg-white p-6 shadow"
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="w-full max-w-sm"
       >
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">Inventario Multi-Sucursal</h1>
-          <p className="text-sm text-gray-500">Inicia sesión para continuar</p>
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm">
+            <Boxes className="h-6 w-6" aria-hidden />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">Inventario Multi-Sucursal</h1>
+            <p className="text-sm text-slate-500">OptiPlant Consultores</p>
+          </div>
         </div>
 
-        {error && <ErrorAlert message={error} />}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm"
+        >
+          {error && <ErrorAlert message={error} />}
 
-        <label className="block text-sm">
-          <span className="text-gray-700">Email</span>
-          <input
+          <Input
+            label="Email"
             type="email"
             required
             autoComplete="username"
+            placeholder="admin@optiplant.local"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
           />
-        </label>
 
-        <label className="block text-sm">
-          <span className="text-gray-700">Contraseña</span>
-          <input
+          <Input
+            label="Contraseña"
             type="password"
             required
             autoComplete="current-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
           />
-        </label>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded bg-brand px-3 py-2 text-white hover:bg-brand-dark disabled:opacity-60"
-        >
-          {submitting ? 'Ingresando…' : 'Iniciar sesión'}
-        </button>
-      </form>
+          <Button type="submit" loading={submitting} className="w-full">
+            {!submitting && <LogIn className="h-4 w-4" aria-hidden />}
+            Iniciar sesión
+          </Button>
+        </form>
+      </motion.div>
     </div>
   );
 }

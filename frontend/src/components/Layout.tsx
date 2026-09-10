@@ -6,7 +6,9 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Package,
   ShieldCheck,
+  Warehouse,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -23,6 +25,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Panel', icon: LayoutDashboard, end: true },
+  { to: '/products', label: 'Productos', icon: Package },
+  { to: '/inventory', label: 'Inventario', icon: Warehouse },
   { to: '/admin', label: 'Administración', icon: ShieldCheck, roles: ['ADMIN_GENERAL'] },
 ];
 

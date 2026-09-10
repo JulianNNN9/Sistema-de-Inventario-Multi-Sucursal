@@ -1,8 +1,13 @@
 export { Button, type ButtonProps } from './Button';
 export { Card } from './Card';
 export { Input } from './Input';
+export { Select, type SelectOption } from './Select';
 export { Skeleton } from './Skeleton';
 export { Badge } from './Badge';
 export { Spinner } from './Spinner';
 export { EmptyState } from './EmptyState';
 export { PageHeader } from './PageHeader';
+export { Modal } from './Modal';
+export { ConfirmDialog } from './ConfirmDialog';
+export { DataTable, type Column } from './DataTable';
+export { Pagination } from './Pagination';

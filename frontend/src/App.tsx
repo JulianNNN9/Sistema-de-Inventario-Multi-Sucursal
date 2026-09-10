@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { AuthProvider } from './context/AuthContext';
 import { AdminPage } from './pages/AdminPage';
+import { ComprasPage } from './pages/ComprasPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { InventarioPage } from './pages/InventarioPage';
 import { LoginPage } from './pages/LoginPage';
@@ -23,6 +24,7 @@ export default function App() {
               <Route index element={<DashboardPage />} />
               <Route path="products" element={<ProductosPage />} />
               <Route path="inventory" element={<InventarioPage />} />
+              <Route path="purchases" element={<ComprasPage />} />
               <Route element={<RoleGuard allow={['ADMIN_GENERAL']} />}>
                 <Route path="admin" element={<AdminPage />} />
               </Route>

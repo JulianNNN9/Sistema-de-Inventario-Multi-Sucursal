@@ -8,6 +8,7 @@ import {
   Menu,
   Package,
   ShieldCheck,
+  ShoppingCart,
   Warehouse,
   type LucideIcon,
 } from 'lucide-react';
@@ -27,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Panel', icon: LayoutDashboard, end: true },
   { to: '/products', label: 'Productos', icon: Package },
   { to: '/inventory', label: 'Inventario', icon: Warehouse },
+  { to: '/purchases', label: 'Compras', icon: ShoppingCart },
   { to: '/admin', label: 'Administración', icon: ShieldCheck, roles: ['ADMIN_GENERAL'] },
 ];
 

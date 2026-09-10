@@ -16,3 +16,13 @@ export function formatNumber(value: number): string {
 export function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
 }
+
+const dateTimeFormatter = new Intl.DateTimeFormat('es-CO', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+});
+
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : dateTimeFormatter.format(date);
+}

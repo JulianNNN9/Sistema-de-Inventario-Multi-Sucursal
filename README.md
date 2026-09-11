@@ -57,11 +57,6 @@ backend/
 frontend/
   src/{api,hooks,types,pages,components}/   # un archivo por dominio en cada carpeta
   src/components/ui/   # kit de componentes propio (Button, Card, DataTable, Modal, ...)
-docs/
-  api/openapi.json          # spec OpenAPI exportado (Módulo 9 · Fase A)
-  DATOS_DE_PRUEBA.md        # credenciales y detalle del seed de ferretería (Módulo 9 · Fase B)
-scripts/
-  export-openapi.sh         # regenera docs/api/openapi.json contra el backend real
 docker-compose.yml
 ```
 

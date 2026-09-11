@@ -11,6 +11,7 @@ import {
   Receipt,
   ShieldCheck,
   ShoppingCart,
+  Truck,
   Warehouse,
   type LucideIcon,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/purchases', label: 'Compras', icon: ShoppingCart },
   { to: '/sales', label: 'Ventas', icon: Receipt },
   { to: '/transfers', label: 'Transferencias', icon: ArrowLeftRight },
+  { to: '/logistics', label: 'Logística', icon: Truck, roles: ['ADMIN_GENERAL'] },
   { to: '/admin', label: 'Administración', icon: ShieldCheck, roles: ['ADMIN_GENERAL'] },
 ];
 

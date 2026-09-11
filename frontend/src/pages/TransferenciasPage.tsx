@@ -37,6 +37,7 @@ import { useProductos } from '../hooks/useProductos';
 import { useTransferEvents } from '../hooks/useTransferEvents';
 import { useTransferenciasList } from '../hooks/useTransferenciasList';
 import { formatDateTime, formatNumber } from '../lib/format';
+import type { TransferSort } from '../types/logistica';
 import type {
   EstadoTransferencia,
   Transfer,
@@ -45,6 +46,12 @@ import type {
 } from '../types/transferencia';
 
 const PAGE_SIZE = 20;
+
+const SORT_OPTIONS: { value: TransferSort; label: string }[] = [
+  { value: 'priority', label: 'Prioridad (urgencia)' },
+  { value: 'cost', label: 'Cantidad solicitada' },
+  { value: 'time', label: 'Llegada estimada' },
+];
 
 const ESTADO_OPTIONS: { value: EstadoTransferencia; label: string }[] = [
   { value: 'PENDIENTE', label: 'Pendiente' },
@@ -84,12 +91,14 @@ export function TransferenciasPage() {
   const [page, setPage] = useState(0);
   const [estado, setEstado] = useState('');
   const [filterBranch, setFilterBranch] = useState('');
+  const [sort, setSort] = useState('');
 
   const { data, loading, error, refetch } = useTransferenciasList({
     page,
     size: PAGE_SIZE,
     estado: (estado || undefined) as EstadoTransferencia | undefined,
     branchId: filterBranch ? Number(filterBranch) : undefined,
+    sort: (sort || undefined) as TransferSort | undefined,
   });
 
   const [requestOpen, setRequestOpen] = useState(false);
@@ -239,6 +248,16 @@ export function TransferenciasPage() {
             placeholder="Todas"
           />
         )}
+        <Select
+          label="Ordenar por"
+          value={sort}
+          onChange={(e) => {
+            setSort(e.target.value);
+            setPage(0);
+          }}
+          options={SORT_OPTIONS}
+          placeholder="Por defecto"
+        />
       </div>
 
       {error && <ErrorAlert message={error} />}

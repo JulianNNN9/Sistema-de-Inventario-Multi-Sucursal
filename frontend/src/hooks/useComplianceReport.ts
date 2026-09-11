@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { listTransfers } from '../api/transferencias';
-import type { ApiError, PageResponse } from '../types/api';
-import type { TransferSort } from '../types/logistica';
-import type { EstadoTransferencia, Transfer } from '../types/transferencia';
+import { getComplianceReport } from '../api/logistica';
+import type { ApiError } from '../types/api';
+import type { ComplianceReportRow } from '../types/logistica';
 
 interface Options {
-  page?: number;
-  size?: number;
-  estado?: EstadoTransferencia;
   branchId?: number;
-  sort?: TransferSort;
+  route?: string;
 }
 
-export function useTransferenciasList({ page = 0, size = 20, estado, branchId, sort }: Options = {}) {
-  const [data, setData] = useState<PageResponse<Transfer> | null>(null);
+export function useComplianceReport({ branchId, route }: Options = {}) {
+  const [data, setData] = useState<ComplianceReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
@@ -23,7 +19,7 @@ export function useTransferenciasList({ page = 0, size = 20, estado, branchId, s
   useEffect(() => {
     let active = true;
     setLoading(true);
-    listTransfers({ page, size, estado, branchId, sort })
+    getComplianceReport({ branchId, route: route || undefined })
       .then((res) => {
         if (active) {
           setData(res);
@@ -31,7 +27,7 @@ export function useTransferenciasList({ page = 0, size = 20, estado, branchId, s
         }
       })
       .catch((err: ApiError) => {
-        if (active) setError(err.message ?? 'No se pudieron cargar las transferencias');
+        if (active) setError(err.message ?? 'No se pudo cargar el reporte de cumplimiento');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -39,7 +35,7 @@ export function useTransferenciasList({ page = 0, size = 20, estado, branchId, s
     return () => {
       active = false;
     };
-  }, [page, size, estado, branchId, sort, reloadTick]);
+  }, [branchId, route, reloadTick]);
 
   return { data, loading, error, refetch };
 }

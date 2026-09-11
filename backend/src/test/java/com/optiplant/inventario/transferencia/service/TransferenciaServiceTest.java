@@ -26,6 +26,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -34,8 +38,10 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -301,5 +307,93 @@ class TransferenciaServiceTest {
         TransferResponse response = transferenciaService.resolver(99L, new ResolveRequest(TratamientoFaltante.RECLAMACION));
 
         assertEquals(EstadoTransferencia.CERRADA_RECLAMACION, response.estado());
+    }
+
+    // --- listar / orden (RF-23, Módulo 5) -------------------------------------------
+
+    private Page<Transferencia> paginaCon(Transferencia... transferencias) {
+        return new PageImpl<>(List.of(transferencias));
+    }
+
+    @Test
+    void listar_sortPriority_usaSearchOrderByPriorityYNoSearch() {
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(transferenciaRepository.searchOrderByPriority(eq(EstadoTransferencia.PENDIENTE), eq(1L), any(Pageable.class)))
+                .thenReturn(paginaCon(transferenciaEn(EstadoTransferencia.PENDIENTE)));
+
+        transferenciaService.listar(EstadoTransferencia.PENDIENTE, 1L, "priority", 0, 20);
+
+        verify(transferenciaRepository).searchOrderByPriority(eq(EstadoTransferencia.PENDIENTE), eq(1L), any());
+        verify(transferenciaRepository, never()).search(any(), any(), any());
+    }
+
+    @Test
+    void listar_sortCost_ordenaPorCantidadSolicitadaDescendente() {
+        when(currentUser.isAdmin()).thenReturn(true);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        when(transferenciaRepository.search(any(), any(), pageableCaptor.capture()))
+                .thenReturn(paginaCon());
+
+        transferenciaService.listar(null, null, "cost", 0, 20);
+
+        Sort.Order orden = pageableCaptor.getValue().getSort().getOrderFor("cantidadSolicitada");
+        assertTrue(orden != null && orden.isDescending());
+    }
+
+    @Test
+    void listar_sortTime_ordenaPorFechaEstimadaLlegadaAscendente() {
+        when(currentUser.isAdmin()).thenReturn(true);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        when(transferenciaRepository.search(any(), any(), pageableCaptor.capture()))
+                .thenReturn(paginaCon());
+
+        transferenciaService.listar(null, null, "time", 0, 20);
+
+        Sort.Order orden = pageableCaptor.getValue().getSort().getOrderFor("fechaEstimadaLlegada");
+        assertTrue(orden != null && orden.isAscending());
+    }
+
+    @Test
+    void listar_sinSortReconocido_noAplicaOrden() {
+        when(currentUser.isAdmin()).thenReturn(true);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        when(transferenciaRepository.search(any(), any(), pageableCaptor.capture()))
+                .thenReturn(paginaCon());
+
+        transferenciaService.listar(null, null, null, 0, 20);
+
+        assertTrue(pageableCaptor.getValue().getSort().isUnsorted());
+    }
+
+    @Test
+    void listar_noAdmin_ignoraBranchIdDelParametroYUsaSucursalDelUsuario() {
+        when(currentUser.isAdmin()).thenReturn(false);
+        when(currentUser.sucursalId()).thenReturn(1L);
+        when(transferenciaRepository.search(isNull(), eq(1L), any())).thenReturn(paginaCon());
+
+        // branchId=99 en el parámetro es de otra sucursal: debe ignorarse.
+        transferenciaService.listar(null, 99L, null, 0, 20);
+
+        verify(transferenciaRepository).search(isNull(), eq(1L), any());
+    }
+
+    @Test
+    void listar_admin_respetaElBranchIdDelParametro() {
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(transferenciaRepository.search(isNull(), eq(2L), any())).thenReturn(paginaCon());
+
+        transferenciaService.listar(null, 2L, null, 0, 20);
+
+        verify(transferenciaRepository).search(isNull(), eq(2L), any());
+    }
+
+    @Test
+    void listar_admin_sinBranchId_buscaEnTodasLasSucursales() {
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(transferenciaRepository.search(isNull(), isNull(), any())).thenReturn(paginaCon());
+
+        transferenciaService.listar(null, null, null, 0, 20);
+
+        verify(transferenciaRepository).search(isNull(), isNull(), any());
     }
 }

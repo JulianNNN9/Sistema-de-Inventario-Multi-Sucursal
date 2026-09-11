@@ -36,6 +36,7 @@ import { useMutation } from '../hooks/useMutation';
 import { useProductos } from '../hooks/useProductos';
 import { useTransferEvents } from '../hooks/useTransferEvents';
 import { useTransferenciasList } from '../hooks/useTransferenciasList';
+import { useToast } from '../context/ToastContext';
 import { formatDateTime, formatNumber } from '../lib/format';
 import type { TransferSort } from '../types/logistica';
 import type {
@@ -109,6 +110,7 @@ export function TransferenciasPage() {
   const [eventsId, setEventsId] = useState<number | null>(null);
 
   const approveM = useMutation(approveTransfer);
+  const { showSuccess, showError } = useToast();
 
   function canApprove(t: Transfer) {
     return rol === 'GERENTE_SUCURSAL' && sucursalId === t.sucursalOrigenId && t.estado === 'PENDIENTE';
@@ -127,10 +129,16 @@ export function TransferenciasPage() {
     if (!approveTarget) return;
     try {
       await approveM.mutate(approveTarget.transfer.id, { aprobado: approveTarget.aprobado });
+      showSuccess(
+        approveTarget.aprobado
+          ? `Transferencia #${approveTarget.transfer.id} aprobada.`
+          : `Transferencia #${approveTarget.transfer.id} rechazada.`,
+      );
       setApproveTarget(null);
       refetch();
-    } catch {
-      /* error mostrado en el ConfirmDialog */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo procesar la aprobación.');
+      /* el error también se muestra en el ConfirmDialog */
     }
   }
 
@@ -356,6 +364,7 @@ interface RequestModalProps {
 function RequestModal({ open, isAdmin, branches, onClose, onCreated }: RequestModalProps) {
   const { data: productosData } = useProductos({ page: 0, size: 300, enabled: open });
   const { mutate, submitting, error, resetError } = useMutation(requestTransfer);
+  const { showSuccess, showError } = useToast();
 
   const [productId, setProductId] = useState('');
   const [cantidad, setCantidad] = useState('');
@@ -387,10 +396,12 @@ function RequestModal({ open, isAdmin, branches, onClose, onCreated }: RequestMo
         urgencia,
         sucursalDestinoId: isAdmin && sucursalDestinoId ? Number(sucursalDestinoId) : undefined,
       });
+      showSuccess('Transferencia solicitada.');
       reset();
       onCreated();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo solicitar la transferencia.');
+      /* el error también se muestra en el modal */
     }
   }
 
@@ -482,6 +493,7 @@ interface DispatchModalProps {
 
 function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
   const { mutate, submitting, error, resetError } = useMutation(dispatchTransfer);
+  const { showSuccess, showError } = useToast();
   const [cantidadEnviada, setCantidadEnviada] = useState('');
   const [transportista, setTransportista] = useState('');
   const [fecha, setFecha] = useState('');
@@ -503,9 +515,11 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
         transportista,
         fechaEstimadaLlegada: new Date(fecha).toISOString(),
       });
+      showSuccess(`Transferencia #${transfer.id} despachada.`);
       onDone();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo despachar la transferencia.');
+      /* el error también se muestra en el modal */
     }
   }
 
@@ -566,6 +580,7 @@ interface ReceiveModalProps {
 
 function ReceiveModal({ transfer, onClose, onDone }: ReceiveModalProps) {
   const { mutate, submitting, error, resetError } = useMutation(receiveTransfer);
+  const { showSuccess, showError } = useToast();
   const [cantidadRecibida, setCantidadRecibida] = useState('');
 
   useEffect(() => {
@@ -579,9 +594,11 @@ function ReceiveModal({ transfer, onClose, onDone }: ReceiveModalProps) {
     if (!transfer) return;
     try {
       await mutate(transfer.id, { cantidadRecibida: Number(cantidadRecibida) });
+      showSuccess(`Recepción de la transferencia #${transfer.id} confirmada.`);
       onDone();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo confirmar la recepción.');
+      /* el error también se muestra en el modal */
     }
   }
 
@@ -631,6 +648,7 @@ interface ResolveModalProps {
 
 function ResolveModal({ transfer, onClose, onDone }: ResolveModalProps) {
   const { mutate, submitting, error, resetError } = useMutation(resolveTransfer);
+  const { showSuccess, showError } = useToast();
   const [tratamiento, setTratamiento] = useState<TratamientoFaltante>('REENVIO');
 
   useEffect(() => {
@@ -644,9 +662,11 @@ function ResolveModal({ transfer, onClose, onDone }: ResolveModalProps) {
     if (!transfer) return;
     try {
       await mutate(transfer.id, { tratamiento });
+      showSuccess(`Faltante de la transferencia #${transfer.id} resuelto.`);
       onDone();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo resolver el faltante.');
+      /* el error también se muestra en el modal */
     }
   }
 

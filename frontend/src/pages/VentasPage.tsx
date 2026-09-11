@@ -21,6 +21,7 @@ import { usePriceLists } from '../hooks/usePriceLists';
 import { useProductos } from '../hooks/useProductos';
 import { useVenta } from '../hooks/useVenta';
 import { useVentasList } from '../hooks/useVentasList';
+import { useToast } from '../context/ToastContext';
 import { formatCurrency, formatDateTime, formatNumber } from '../lib/format';
 import type { PriceList, Sale, SaleInput, SaleLineInput, SaleSummary } from '../types/venta';
 
@@ -211,6 +212,7 @@ interface SaleModalProps {
 function SaleModal({ open, isAdmin, branches, priceLists, onClose, onCreated }: SaleModalProps) {
   const { data: productosData } = useProductos({ page: 0, size: 300, enabled: open });
   const { mutate, submitting, error, resetError } = useMutation(createSale);
+  const { showError } = useToast();
 
   const [branchId, setBranchId] = useState('');
   const [priceListId, setPriceListId] = useState('');
@@ -274,8 +276,9 @@ function SaleModal({ open, isAdmin, branches, priceLists, onClose, onCreated }: 
       const sale = await mutate(body);
       reset();
       onCreated(sale);
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo registrar la venta.');
+      /* el error también se muestra en el modal */
     }
   }
 
@@ -509,6 +512,7 @@ interface PriceListsModalProps {
 function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreated }: PriceListsModalProps) {
   const { data: productosData } = useProductos({ page: 0, size: 300, enabled: open });
   const { mutate, submitting, error, resetError } = useMutation(createPriceList);
+  const { showSuccess, showError } = useToast();
 
   const [nombre, setNombre] = useState('');
   const [branchId, setBranchId] = useState('');
@@ -536,10 +540,12 @@ function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreat
           .filter((i) => i.productId && i.precio)
           .map((i) => ({ productId: Number(i.productId), precio: Number(i.precio) })),
       });
+      showSuccess(`Lista de precios "${nombre}" creada.`);
       reset();
       onCreated();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo crear la lista de precios.');
+      /* el error también se muestra en el modal */
     }
   }
 

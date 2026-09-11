@@ -19,6 +19,7 @@ import { useBranches } from '../hooks/useBranches';
 import { useBranchInventory } from '../hooks/useBranchInventory';
 import { useProductos } from '../hooks/useProductos';
 import { useMutation } from '../hooks/useMutation';
+import { useToast } from '../context/ToastContext';
 import { formatCurrency, formatNumber } from '../lib/format';
 import {
   MOTIVOS_POR_TIPO,
@@ -319,6 +320,7 @@ interface MinStockModalProps {
 
 function MinStockModal({ target, branchId, onClose, onSaved }: MinStockModalProps) {
   const { mutate, submitting, error, resetError } = useMutation(setMinStock);
+  const { showSuccess, showError } = useToast();
   const [valor, setValor] = useState('');
 
   useEffect(() => {
@@ -332,10 +334,12 @@ function MinStockModal({ target, branchId, onClose, onSaved }: MinStockModalProp
     if (!target || branchId === null) return;
     try {
       await mutate(target.productId, { stockMinimo: Number(valor), branchId });
+      showSuccess(`Stock mínimo de "${target.productoNombre}" actualizado.`);
       onSaved();
       onClose();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo actualizar el stock mínimo.');
+      /* el error también se muestra en el modal */
     }
   }
 

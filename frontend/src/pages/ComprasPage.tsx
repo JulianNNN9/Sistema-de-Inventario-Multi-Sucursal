@@ -24,6 +24,7 @@ import { useMutation } from '../hooks/useMutation';
 import { useProductos } from '../hooks/useProductos';
 import { useProveedores } from '../hooks/useProveedores';
 import { usePurchaseOrder } from '../hooks/usePurchaseOrder';
+import { useToast } from '../context/ToastContext';
 import { cn } from '../lib/cn';
 import { formatCurrency, formatDateTime, formatNumber } from '../lib/format';
 import type {
@@ -70,15 +71,18 @@ export function ComprasPage() {
   const [receiptTarget, setReceiptTarget] = useState<PurchaseOrderSummary | null>(null);
 
   const receiptM = useMutation(confirmReceipt);
+  const { showSuccess, showError } = useToast();
 
   async function handleConfirmReceipt() {
     if (!receiptTarget) return;
     try {
       await receiptM.mutate(receiptTarget.id);
+      showSuccess(`Orden de compra #${receiptTarget.id} marcada como recibida.`);
       setReceiptTarget(null);
       refetch();
-    } catch {
-      /* error mostrado en el ConfirmDialog */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo confirmar la recepción.');
+      /* el error también se muestra en el ConfirmDialog */
     }
   }
 
@@ -257,6 +261,7 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
   const { branches } = useBranches();
   const { data: productosData } = useProductos({ page: 0, size: 300, enabled: open });
   const { mutate, submitting, error, resetError } = useMutation(createPurchaseOrder);
+  const { showSuccess, showError } = useToast();
 
   const [supplierId, setSupplierId] = useState('');
   const [branchId, setBranchId] = useState('');
@@ -302,10 +307,12 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
 
     try {
       await mutate(body);
+      showSuccess('Orden de compra creada.');
       reset();
       onCreated();
-    } catch {
-      /* error mostrado en el modal */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo crear la orden de compra.');
+      /* el error también se muestra en el modal */
     }
   }
 
@@ -459,14 +466,17 @@ interface OrderDetailModalProps {
 function OrderDetailModal({ id, canManage, onClose, onReceived }: OrderDetailModalProps) {
   const { order, loading, error } = usePurchaseOrder(id);
   const receiptM = useMutation(confirmReceipt);
+  const { showSuccess, showError } = useToast();
 
   async function handleReceipt() {
     if (!order) return;
     try {
       await receiptM.mutate(order.id);
+      showSuccess(`Orden de compra #${order.id} marcada como recibida.`);
       onReceived();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo confirmar la recepción.');
+      /* el error también se muestra en el modal */
     }
   }
 
@@ -565,6 +575,7 @@ interface SuppliersModalProps {
 
 function SuppliersModal({ open, onClose }: SuppliersModalProps) {
   const { proveedores, loading, refetch } = useProveedores();
+  const { showSuccess, showError } = useToast();
   const createM = useMutation(createSupplier);
   const updateM = useMutation(updateSupplier);
   const [editing, setEditing] = useState<Proveedor | null>(null);
@@ -610,13 +621,16 @@ function SuppliersModal({ open, onClose }: SuppliersModalProps) {
           frecuenciaPago,
           condiciones: condiciones || undefined,
         });
+        showSuccess(`Proveedor "${nombre}" actualizado.`);
       } else {
         await createM.mutate({ nombre, frecuenciaPago, condiciones: condiciones || undefined });
+        showSuccess(`Proveedor "${nombre}" creado.`);
       }
       startCreate();
       refetch();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo guardar el proveedor.');
+      /* el error también se muestra en el formulario */
     }
   }
 

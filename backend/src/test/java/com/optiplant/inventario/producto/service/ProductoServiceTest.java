@@ -3,12 +3,15 @@ package com.optiplant.inventario.producto.service;
 import com.optiplant.inventario.common.exception.ConflictoEstadoException;
 import com.optiplant.inventario.common.exception.RecursoNoEncontradoException;
 import com.optiplant.inventario.common.exception.ValidacionException;
+import com.optiplant.inventario.inventario.entity.InventarioSucursal;
 import com.optiplant.inventario.inventario.repository.InventarioSucursalRepository;
 import com.optiplant.inventario.producto.dto.ProductoRequest;
 import com.optiplant.inventario.producto.dto.ProductoResponse;
 import com.optiplant.inventario.producto.entity.Producto;
 import com.optiplant.inventario.producto.repository.ProductoRepository;
 import com.optiplant.inventario.security.CurrentUser;
+import com.optiplant.inventario.sucursal.entity.Sucursal;
+import com.optiplant.inventario.sucursal.repository.SucursalRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,6 +39,8 @@ class ProductoServiceTest {
     @Mock
     private InventarioSucursalRepository inventarioSucursalRepository;
     @Mock
+    private SucursalRepository sucursalRepository;
+    @Mock
     private CurrentUser currentUser;
 
     @InjectMocks
@@ -53,7 +58,8 @@ class ProductoServiceTest {
     }
 
     @Test
-    void crear_ok_persisteYDevuelveResponse() {
+    void crear_admin_persisteYDevuelveResponseSinInventario() {
+        when(currentUser.isAdmin()).thenReturn(true);
         when(productoRepository.existsBySku("SKU-2")).thenReturn(false);
         when(productoRepository.save(any(Producto.class))).thenAnswer(i -> {
             Producto p = i.getArgument(0);
@@ -66,6 +72,25 @@ class ProductoServiceTest {
 
         assertEquals(9L, response.id());
         assertEquals("SKU-2", response.sku());
+        verify(inventarioSucursalRepository, never()).save(any());
+    }
+
+    @Test
+    void crear_noAdmin_creaFilaDeInventarioEnSuPropiaSucursal() {
+        when(currentUser.isAdmin()).thenReturn(false);
+        when(currentUser.sucursalId()).thenReturn(3L);
+        when(productoRepository.existsBySku("SKU-2")).thenReturn(false);
+        when(productoRepository.save(any(Producto.class))).thenAnswer(i -> {
+            Producto p = i.getArgument(0);
+            p.setId(9L);
+            return p;
+        });
+        Sucursal sucursal = Sucursal.builder().id(3L).build();
+        when(sucursalRepository.getReferenceById(3L)).thenReturn(sucursal);
+
+        productoService.crear(new ProductoRequest("SKU-2", "Tuerca", "unidad"));
+
+        verify(inventarioSucursalRepository).save(any(InventarioSucursal.class));
     }
 
     @Test

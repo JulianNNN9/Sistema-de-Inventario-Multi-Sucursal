@@ -15,6 +15,7 @@ import { ErrorAlert } from '../components/ErrorAlert';
 import { createProduct, deleteProduct, updateProduct } from '../api/productos';
 import { useProductos } from '../hooks/useProductos';
 import { useMutation } from '../hooks/useMutation';
+import { useToast } from '../context/ToastContext';
 import type { Producto } from '../types/producto';
 
 const PAGE_SIZE = 20;
@@ -22,6 +23,7 @@ const PAGE_SIZE = 20;
 export function ProductosPage() {
   const [page, setPage] = useState(0);
   const { data, loading, error, refetch } = useProductos({ page, size: PAGE_SIZE });
+  const { showSuccess, showError } = useToast();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Producto | null>(null);
@@ -60,13 +62,16 @@ export function ProductosPage() {
     try {
       if (editing) {
         await updateM.mutate(editing.id, { nombre, unidadMedidaBase: unidad });
+        showSuccess(`Producto "${nombre}" actualizado.`);
       } else {
         await createM.mutate({ sku, nombre, unidadMedidaBase: unidad });
+        showSuccess(`Producto "${nombre}" creado.`);
       }
       setFormOpen(false);
       refetch();
-    } catch {
-      /* el error se muestra en el modal vía formError */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo guardar el producto.');
+      /* el error también se muestra en el modal vía formError */
     }
   }
 
@@ -74,10 +79,12 @@ export function ProductosPage() {
     if (!deleteTarget) return;
     try {
       await deleteM.mutate(deleteTarget.id);
+      showSuccess(`Producto "${deleteTarget.nombre}" eliminado.`);
       setDeleteTarget(null);
       refetch();
-    } catch {
-      /* el error se muestra en el ConfirmDialog */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo eliminar el producto.');
+      /* el error también se muestra en el ConfirmDialog */
     }
   }
 

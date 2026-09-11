@@ -21,8 +21,18 @@ public class ProveedorService {
     public ProveedorResponse crear(ProveedorRequest request) {
         Proveedor proveedor = Proveedor.builder()
                 .nombre(request.nombre())
+                .frecuenciaPago(request.frecuenciaPago())
                 .condiciones(request.condiciones())
                 .build();
+        return toResponse(proveedorRepository.save(proveedor));
+    }
+
+    @Transactional
+    public ProveedorResponse actualizar(Long id, ProveedorRequest request) {
+        Proveedor proveedor = getEntityById(id);
+        proveedor.setNombre(request.nombre());
+        proveedor.setFrecuenciaPago(request.frecuenciaPago());
+        proveedor.setCondiciones(request.condiciones());
         return toResponse(proveedorRepository.save(proveedor));
     }
 
@@ -38,6 +48,7 @@ public class ProveedorService {
     }
 
     private ProveedorResponse toResponse(Proveedor proveedor) {
-        return new ProveedorResponse(proveedor.getId(), proveedor.getNombre(), proveedor.getCondiciones());
+        return new ProveedorResponse(
+                proveedor.getId(), proveedor.getNombre(), proveedor.getFrecuenciaPago(), proveedor.getCondiciones());
     }
 }

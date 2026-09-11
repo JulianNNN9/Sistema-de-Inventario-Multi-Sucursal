@@ -6,12 +6,8 @@ import com.optiplant.inventario.common.exception.ValidacionException;
 import com.optiplant.inventario.inventario.repository.InventarioSucursalRepository;
 import com.optiplant.inventario.producto.dto.ProductoRequest;
 import com.optiplant.inventario.producto.dto.ProductoResponse;
-import com.optiplant.inventario.producto.dto.ProductoUnidadRequest;
-import com.optiplant.inventario.producto.dto.ProductoUnidadResponse;
 import com.optiplant.inventario.producto.entity.Producto;
-import com.optiplant.inventario.producto.entity.ProductoUnidad;
 import com.optiplant.inventario.producto.repository.ProductoRepository;
-import com.optiplant.inventario.producto.repository.ProductoUnidadRepository;
 import com.optiplant.inventario.security.CurrentUser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,8 +33,6 @@ class ProductoServiceTest {
 
     @Mock
     private ProductoRepository productoRepository;
-    @Mock
-    private ProductoUnidadRepository productoUnidadRepository;
     @Mock
     private InventarioSucursalRepository inventarioSucursalRepository;
     @Mock
@@ -85,13 +78,12 @@ class ProductoServiceTest {
     }
 
     @Test
-    void eliminar_sinInventario_borraUnidadesYProducto() {
+    void eliminar_sinInventario_borraProducto() {
         when(productoRepository.findById(5L)).thenReturn(Optional.of(producto));
         when(inventarioSucursalRepository.existsByProductoId(5L)).thenReturn(false);
 
         productoService.eliminar(5L);
 
-        verify(productoUnidadRepository).deleteByProductoId(5L);
         verify(productoRepository).delete(producto);
     }
 
@@ -100,34 +92,6 @@ class ProductoServiceTest {
         when(productoRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> productoService.eliminar(99L));
-    }
-
-    @Test
-    void agregarUnidad_conNombreDuplicado_lanzaValidacion() {
-        when(productoRepository.findById(5L)).thenReturn(Optional.of(producto));
-        when(productoUnidadRepository.existsByProductoIdAndNombreUnidad(5L, "caja")).thenReturn(true);
-
-        assertThrows(ValidacionException.class,
-                () -> productoService.agregarUnidad(5L, new ProductoUnidadRequest("caja", new BigDecimal("12"))));
-    }
-
-    @Test
-    void agregarUnidad_ok_persisteYDevuelveResponse() {
-        when(productoRepository.findById(5L)).thenReturn(Optional.of(producto));
-        when(productoUnidadRepository.existsByProductoIdAndNombreUnidad(5L, "caja")).thenReturn(false);
-        when(productoUnidadRepository.save(any(ProductoUnidad.class))).thenAnswer(i -> {
-            ProductoUnidad u = i.getArgument(0);
-            u.setId(3L);
-            return u;
-        });
-
-        ProductoUnidadResponse response =
-                productoService.agregarUnidad(5L, new ProductoUnidadRequest("caja", new BigDecimal("12")));
-
-        assertEquals(3L, response.id());
-        assertEquals(5L, response.productoId());
-        assertEquals("caja", response.nombreUnidad());
-        assertEquals(0, response.factorConversion().compareTo(new BigDecimal("12")));
     }
 
     @Test

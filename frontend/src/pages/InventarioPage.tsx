@@ -86,6 +86,7 @@ export function InventarioPage() {
             aria-label={`Configurar stock mínimo de ${r.productoNombre}`}
           >
             <SlidersHorizontal className="h-4 w-4" aria-hidden />
+            Stock mínimo
           </Button>
         ) : null,
     },
@@ -133,7 +134,7 @@ export function InventarioPage() {
 
       {branchId !== null && !puedeEditar && (
         <p className="text-xs text-slate-500">
-          Estás viendo una sucursal distinta a la tuya: solo lectura (RF-02).
+          Estás viendo una sucursal distinta a la tuya: solo lectura.
         </p>
       )}
 
@@ -258,6 +259,7 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
 
         <Select
           label="Producto"
+          hint="Producto sobre el que se registrará el movimiento en esta sucursal."
           value={productId}
           onChange={(e) => setProductId(e.target.value)}
           options={productOptions}
@@ -268,6 +270,7 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
         <div className="grid grid-cols-2 gap-3">
           <Select
             label="Tipo"
+            hint="Ingreso suma al inventario; retiro lo descuenta."
             value={tipo}
             onChange={(e) => setTipo(e.target.value as TipoMovimiento)}
             options={[
@@ -277,6 +280,7 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
           />
           <Select
             label="Motivo"
+            hint="Razón del movimiento (varía según el tipo elegido)."
             value={motivo}
             onChange={(e) => setMotivo(e.target.value as MotivoMovimiento)}
             options={motivosDisponibles.map((m) => ({ value: m, label: m }))}
@@ -285,6 +289,7 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
 
         <Input
           label="Cantidad"
+          hint="Cantidad a mover, en la unidad de medida base del producto."
           type="number"
           step="0.01"
           min="0"
@@ -355,6 +360,7 @@ function MinStockModal({ target, branchId, onClose, onSaved }: MinStockModalProp
         {error && <ErrorAlert message={error} />}
         <Input
           label="Stock mínimo"
+          hint="Se genera una alerta cuando la existencia cae por debajo de este valor."
           type="number"
           step="0.01"
           min="0"
@@ -362,9 +368,6 @@ function MinStockModal({ target, branchId, onClose, onSaved }: MinStockModalProp
           onChange={(e) => setValor(e.target.value)}
           required
         />
-        <p className="text-xs text-slate-500">
-          Se genera alerta cuando la existencia cae por debajo de este valor (RF-05).
-        </p>
       </form>
     </Modal>
   );

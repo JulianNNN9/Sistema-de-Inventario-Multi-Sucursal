@@ -29,6 +29,10 @@ public class Proveedor {
     @Column(nullable = false, length = 160)
     private String nombre;
 
+    /** Cada cuánto se le paga al proveedor (ej. "30 días", "Contado"). Obligatorio. */
+    @Column(name = "frecuencia_pago", nullable = false, length = 60)
+    private String frecuenciaPago;
+
     @Column(columnDefinition = "text")
     private String condiciones;
 }

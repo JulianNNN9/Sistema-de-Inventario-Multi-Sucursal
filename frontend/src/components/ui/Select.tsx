@@ -8,17 +8,19 @@ export interface SelectOption {
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
+  hint?: string;
   error?: string;
   options: SelectOption[];
   placeholder?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { label, error, options, placeholder, className, id, ...props },
+  { label, hint, error, options, placeholder, className, id, ...props },
   ref,
 ) {
   const generatedId = useId();
   const selectId = id ?? generatedId;
+  const hintId = hint ? `${selectId}-hint` : undefined;
 
   return (
     <div className="space-y-1.5">
@@ -31,6 +33,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         ref={ref}
         id={selectId}
         aria-invalid={error ? true : undefined}
+        aria-describedby={hintId}
         className={cn(
           'h-10 w-full rounded-xl border bg-white px-3 text-sm text-slate-900',
           'transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
@@ -48,6 +51,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           </option>
         ))}
       </select>
+      {!error && hint && (
+        <p id={hintId} className="text-xs text-slate-500">
+          {hint}
+        </p>
+      )}
       {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
     </div>
   );

@@ -16,7 +16,7 @@ import {
 } from '../components/ui';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { confirmReceipt, createPurchaseOrder } from '../api/compras';
-import { createSupplier } from '../api/proveedores';
+import { createSupplier, updateSupplier } from '../api/proveedores';
 import { useAuth } from '../hooks/useAuth';
 import { useBranches } from '../hooks/useBranches';
 import { useComprasList } from '../hooks/useComprasList';
@@ -24,9 +24,11 @@ import { useMutation } from '../hooks/useMutation';
 import { useProductos } from '../hooks/useProductos';
 import { useProveedores } from '../hooks/useProveedores';
 import { usePurchaseOrder } from '../hooks/usePurchaseOrder';
+import { cn } from '../lib/cn';
 import { formatCurrency, formatDateTime, formatNumber } from '../lib/format';
 import type {
   EstadoOrdenCompra,
+  Proveedor,
   PurchaseOrderInput,
   PurchaseOrderLineInput,
   PurchaseOrderSummary,
@@ -95,6 +97,7 @@ export function ComprasPage() {
         <div className="flex justify-end gap-1">
           <Button size="sm" variant="ghost" onClick={() => setDetailId(o.id)} aria-label={`Ver orden ${o.id}`}>
             <Eye className="h-4 w-4" aria-hidden />
+            Ver
           </Button>
           {canManage && o.estado === 'PENDIENTE' && (
             <Button
@@ -104,6 +107,7 @@ export function ComprasPage() {
               aria-label={`Confirmar recepción de la orden ${o.id}`}
             >
               <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
+              Confirmar recepción
             </Button>
           )}
         </div>
@@ -115,7 +119,7 @@ export function ComprasPage() {
     <div className="space-y-6">
       <PageHeader
         title="Compras"
-        description="Órdenes de compra a proveedores e histórico (RF-08..RF-12)."
+        description="Órdenes de compra a proveedores e histórico."
         actions={
           canManage ? (
             <>
@@ -256,7 +260,6 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
 
   const [supplierId, setSupplierId] = useState('');
   const [branchId, setBranchId] = useState('');
-  const [plazoPago, setPlazoPago] = useState('');
   const [lineas, setLineas] = useState<LineDraft[]>([{ ...EMPTY_LINE }]);
 
   const productOptions = useMemo(
@@ -264,10 +267,14 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
     [productosData],
   );
 
+  const proveedorSeleccionado = useMemo(
+    () => proveedores.find((p) => String(p.id) === supplierId) ?? null,
+    [proveedores, supplierId],
+  );
+
   function reset() {
     setSupplierId('');
     setBranchId('');
-    setPlazoPago('');
     setLineas([{ ...EMPTY_LINE }]);
     resetError();
   }
@@ -290,7 +297,6 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
     const body: PurchaseOrderInput = {
       supplierId: Number(supplierId),
       branchId: isAdmin && branchId ? Number(branchId) : undefined,
-      plazoPago: plazoPago || undefined,
       lineas: parsedLines,
     };
 
@@ -336,6 +342,7 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Select
             label="Proveedor"
+            hint="El plazo de pago de la orden se toma automáticamente de este proveedor."
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
             options={proveedores.map((p) => ({ value: p.id, label: p.nombre }))}
@@ -345,6 +352,7 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
           {isAdmin && (
             <Select
               label="Sucursal"
+              hint="Sucursal que recibirá la mercancía y a la que se factura la orden."
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
               options={branches.map((b) => ({ value: b.id, label: b.nombre }))}
@@ -354,9 +362,11 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
           )}
           <Input
             label="Plazo de pago"
-            value={plazoPago}
-            onChange={(e) => setPlazoPago(e.target.value)}
-            placeholder="30 días"
+            hint="Definido en la configuración del proveedor; no se edita aquí."
+            value={proveedorSeleccionado?.frecuenciaPago ?? ''}
+            placeholder="Selecciona un proveedor"
+            disabled
+            readOnly
           />
         </div>
 
@@ -373,6 +383,9 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
               Agregar línea
             </Button>
           </div>
+          <p className="text-xs text-slate-500">
+            Por cada línea: producto, cantidad, precio unitario y descuento opcional (%).
+          </p>
 
           {lineas.map((linea, index) => (
             <div
@@ -426,6 +439,7 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
                 aria-label={`Eliminar línea ${index + 1}`}
               >
                 <Trash2 className="h-4 w-4 text-rose-500" aria-hidden />
+                Eliminar
               </Button>
             </div>
           ))}
@@ -551,17 +565,55 @@ interface SuppliersModalProps {
 
 function SuppliersModal({ open, onClose }: SuppliersModalProps) {
   const { proveedores, loading, refetch } = useProveedores();
-  const { mutate, submitting, error, resetError } = useMutation(createSupplier);
+  const createM = useMutation(createSupplier);
+  const updateM = useMutation(updateSupplier);
+  const [editing, setEditing] = useState<Proveedor | null>(null);
+  const [busqueda, setBusqueda] = useState('');
   const [nombre, setNombre] = useState('');
+  const [frecuenciaPago, setFrecuenciaPago] = useState('');
   const [condiciones, setCondiciones] = useState('');
 
-  async function handleAdd(event: FormEvent) {
+  const mutation = editing ? updateM : createM;
+
+  const proveedoresFiltrados = useMemo(
+    () =>
+      proveedores.filter((p) =>
+        p.nombre.toLowerCase().includes(busqueda.trim().toLowerCase()),
+      ),
+    [proveedores, busqueda],
+  );
+
+  function startCreate() {
+    setEditing(null);
+    setNombre('');
+    setFrecuenciaPago('');
+    setCondiciones('');
+    createM.resetError();
+    updateM.resetError();
+  }
+
+  function startEdit(proveedor: Proveedor) {
+    setEditing(proveedor);
+    setNombre(proveedor.nombre);
+    setFrecuenciaPago(proveedor.frecuenciaPago);
+    setCondiciones(proveedor.condiciones ?? '');
+    createM.resetError();
+    updateM.resetError();
+  }
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     try {
-      await mutate({ nombre, condiciones: condiciones || undefined });
-      setNombre('');
-      setCondiciones('');
-      resetError();
+      if (editing) {
+        await updateM.mutate(editing.id, {
+          nombre,
+          frecuenciaPago,
+          condiciones: condiciones || undefined,
+        });
+      } else {
+        await createM.mutate({ nombre, frecuenciaPago, condiciones: condiciones || undefined });
+      }
+      startCreate();
       refetch();
     } catch {
       /* error mostrado */
@@ -569,42 +621,95 @@ function SuppliersModal({ open, onClose }: SuppliersModalProps) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Proveedores" className="max-w-lg">
+    <Modal
+      open={open}
+      onClose={() => {
+        startCreate();
+        setBusqueda('');
+        onClose();
+      }}
+      title="Proveedores"
+      className="max-w-lg"
+    >
       <div className="space-y-4">
+        <Input
+          label="Buscar por nombre"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Escribe el nombre del proveedor…"
+        />
+
         {loading && <p className="text-sm text-slate-500">Cargando…</p>}
-        {!loading && proveedores.length > 0 && (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-            {proveedores.map((p) => (
-              <li key={p.id} className="px-3 py-2 text-sm">
-                <p className="font-medium text-slate-800">{p.nombre}</p>
-                {p.condiciones && <p className="text-slate-500">{p.condiciones}</p>}
+        {!loading && proveedoresFiltrados.length > 0 && (
+          <ul className="max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200">
+            {proveedoresFiltrados.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => startEdit(p)}
+                  className={cn(
+                    'flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50',
+                    editing?.id === p.id && 'bg-brand-50',
+                  )}
+                >
+                  <span className="min-w-0 truncate font-medium text-slate-800">{p.nombre}</span>
+                  <span className="shrink-0 text-xs text-slate-500">Paga: {p.frecuenciaPago}</span>
+                </button>
               </li>
             ))}
           </ul>
         )}
-        {!loading && proveedores.length === 0 && (
+        {!loading && proveedoresFiltrados.length === 0 && (
           <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-500">
-            Aún no hay proveedores registrados.
+            {proveedores.length === 0
+              ? 'Aún no hay proveedores registrados.'
+              : 'Ningún proveedor coincide con la búsqueda.'}
           </p>
         )}
 
-        <form onSubmit={handleAdd} className="space-y-3 border-t border-slate-100 pt-4">
-          {error && <ErrorAlert message={error} />}
+        <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 pt-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700">
+              {editing ? `Editando "${editing.nombre}"` : 'Nuevo proveedor'}
+            </span>
+            {editing && (
+              <Button type="button" size="sm" variant="ghost" onClick={startCreate}>
+                Cancelar edición
+              </Button>
+            )}
+          </div>
+          {mutation.error && <ErrorAlert message={mutation.error} />}
           <Input
             label="Nombre"
+            hint="Nombre comercial con el que se identifica al proveedor."
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
           />
+          <Input
+            label="Cada cuánto se le paga"
+            hint="Plazo de pago acordado (ej. Contado, 30 días, 60 días). Se usará automáticamente en cada orden de compra a este proveedor."
+            value={frecuenciaPago}
+            onChange={(e) => setFrecuenciaPago(e.target.value)}
+            placeholder="30 días"
+            required
+          />
           <Textarea
-            label="Condiciones comerciales"
+            label="Condiciones adicionales (opcional)"
+            hint="Cualquier otra condición comercial acordada con el proveedor."
             rows={2}
             value={condiciones}
             onChange={(e) => setCondiciones(e.target.value)}
           />
-          <Button type="submit" size="sm" loading={submitting}>
-            <Plus className="h-4 w-4" aria-hidden />
-            Agregar proveedor
+          <Button type="submit" size="sm" loading={mutation.submitting}>
+            {editing ? (
+              'Guardar cambios'
+            ) : (
+              <>
+                <Plus className="h-4 w-4" aria-hidden />
+                Agregar proveedor
+              </>
+            )}
           </Button>
         </form>
       </div>

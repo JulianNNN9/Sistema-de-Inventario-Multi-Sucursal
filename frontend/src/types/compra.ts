@@ -1,11 +1,13 @@
 export interface Proveedor {
   id: number;
   nombre: string;
+  frecuenciaPago: string;
   condiciones: string | null;
 }
 
 export interface ProveedorInput {
   nombre: string;
+  frecuenciaPago: string;
   condiciones?: string;
 }
 
@@ -21,7 +23,6 @@ export interface PurchaseOrderLineInput {
 export interface PurchaseOrderInput {
   supplierId: number;
   branchId?: number;
-  plazoPago?: string;
   lineas: PurchaseOrderLineInput[];
 }
 

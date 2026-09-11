@@ -60,7 +60,7 @@ public class CompraService {
                 .sucursal(sucursal)
                 .fecha(Instant.now())
                 .estado(EstadoOrdenCompra.PENDIENTE)
-                .plazoPago(request.plazoPago())
+                .plazoPago(proveedor.getFrecuenciaPago())
                 .build();
 
         for (PurchaseOrderLineRequest linea : request.lineas()) {

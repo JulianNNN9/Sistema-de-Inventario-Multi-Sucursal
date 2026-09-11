@@ -59,6 +59,7 @@ export function LoginPage() {
 
           <Input
             label="Email"
+            hint="Correo con el que fuiste registrado en el sistema."
             type="email"
             required
             autoComplete="username"
@@ -69,6 +70,7 @@ export function LoginPage() {
 
           <Input
             label="Contraseña"
+            hint="La contraseña asignada por tu administrador."
             type="password"
             required
             autoComplete="current-password"

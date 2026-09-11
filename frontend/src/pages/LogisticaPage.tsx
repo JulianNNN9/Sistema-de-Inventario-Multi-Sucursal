@@ -55,7 +55,7 @@ export function LogisticaPage() {
     <div className="space-y-6">
       <PageHeader
         title="Logística"
-        description="Cumplimiento de tiempos de entrega por ruta (sucursal de origen + transportista). Positivo = tardanza promedio, negativo = adelanto promedio (RF-25)."
+        description="Cumplimiento de tiempos de entrega por ruta (sucursal de origen + transportista). Positivo = tardanza promedio, negativo = adelanto promedio."
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

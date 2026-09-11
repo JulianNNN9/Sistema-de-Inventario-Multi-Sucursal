@@ -91,16 +91,18 @@ class ListaPrecioServiceTest {
         assertEquals(1, response.items().size());
     }
 
+    private final ListaPrecio lista = ListaPrecio.builder().id(5L).nombre("Lista General").build();
+
     @Test
     void resolverPrecio_listaInexistente_lanzaNoEncontrado() {
-        when(listaPrecioRepository.existsById(5L)).thenReturn(false);
+        when(listaPrecioRepository.findById(5L)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> listaPrecioService.resolverPrecio(5L, 10L));
     }
 
     @Test
     void resolverPrecio_productoSinPrecioEnLista_lanzaValidacion() {
-        when(listaPrecioRepository.existsById(5L)).thenReturn(true);
+        when(listaPrecioRepository.findById(5L)).thenReturn(Optional.of(lista));
         when(listaPrecioDetalleRepository.findByListaIdAndProductoId(5L, 10L)).thenReturn(Optional.empty());
 
         assertThrows(ValidacionException.class, () -> listaPrecioService.resolverPrecio(5L, 10L));
@@ -108,7 +110,7 @@ class ListaPrecioServiceTest {
 
     @Test
     void resolverPrecio_ok_devuelveElPrecioDeLaLista() {
-        when(listaPrecioRepository.existsById(5L)).thenReturn(true);
+        when(listaPrecioRepository.findById(5L)).thenReturn(Optional.of(lista));
         when(listaPrecioDetalleRepository.findByListaIdAndProductoId(5L, 10L))
                 .thenReturn(Optional.of(ListaPrecioDetalle.builder().precio(new BigDecimal("900")).build()));
 

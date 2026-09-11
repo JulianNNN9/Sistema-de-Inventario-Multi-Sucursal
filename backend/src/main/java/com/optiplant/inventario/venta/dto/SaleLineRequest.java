@@ -14,7 +14,7 @@ import java.math.BigDecimal;
  */
 public record SaleLineRequest(
 
-        @NotNull(message = "productId es obligatorio")
+        @NotNull(message = "debes seleccionar un producto")
         Long productId,
 
         @NotNull(message = "la cantidad es obligatoria")

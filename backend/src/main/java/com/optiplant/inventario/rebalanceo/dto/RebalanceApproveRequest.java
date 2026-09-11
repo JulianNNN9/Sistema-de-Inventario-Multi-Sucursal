@@ -15,7 +15,7 @@ import java.math.BigDecimal;
  */
 public record RebalanceApproveRequest(
 
-        @NotNull(message = "productId es obligatorio")
+        @NotNull(message = "debes seleccionar un producto")
         Long productId,
 
         @NotNull(message = "la cantidad sugerida es obligatoria")
@@ -23,10 +23,10 @@ public record RebalanceApproveRequest(
         @Digits(integer = 10, fraction = 2, message = "la cantidad admite hasta 10 enteros y 2 decimales")
         BigDecimal cantidadSugerida,
 
-        @NotNull(message = "sucursalOrigenId es obligatorio")
+        @NotNull(message = "debes seleccionar la sucursal de origen")
         Long sucursalOrigenId,
 
-        @NotNull(message = "sucursalDestinoId es obligatorio")
+        @NotNull(message = "debes seleccionar la sucursal de destino")
         Long sucursalDestinoId
 ) {
 }

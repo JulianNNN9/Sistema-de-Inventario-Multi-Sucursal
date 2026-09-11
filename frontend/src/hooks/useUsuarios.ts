@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { listBranches } from '../api/sucursales';
+import { listUsers } from '../api/usuarios';
 import type { ApiError } from '../types/api';
-import type { Sucursal } from '../types/sucursal';
+import type { Usuario } from '../types/usuario';
 
-export function useBranches() {
-  const [branches, setBranches] = useState<Sucursal[]>([]);
+export function useUsuarios() {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
@@ -14,15 +14,15 @@ export function useBranches() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    listBranches()
+    listUsers()
       .then((res) => {
         if (active) {
-          setBranches(res.content);
+          setUsuarios(res.content);
           setError(null);
         }
       })
       .catch((err: ApiError) => {
-        if (active) setError(err.message ?? 'No se pudieron cargar las sucursales');
+        if (active) setError(err.message ?? 'No se pudieron cargar los usuarios');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -32,5 +32,5 @@ export function useBranches() {
     };
   }, [reloadTick]);
 
-  return { branches, loading, error, refetch };
+  return { usuarios, loading, error, refetch };
 }

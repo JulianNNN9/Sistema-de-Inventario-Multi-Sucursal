@@ -51,7 +51,7 @@ public class InventarioService {
         if (request.motivo() == MotivoMovimiento.TRANSFERENCIA_SALIDA
                 || request.motivo() == MotivoMovimiento.TRANSFERENCIA_ENTRADA) {
             throw new ValidacionException(
-                    "campo 'motivo': TRANSFERENCIA_SALIDA y TRANSFERENCIA_ENTRADA se generan solo desde el módulo de transferencias");
+                    "Ese motivo se genera automáticamente al despachar o recibir una transferencia; no se puede registrar manualmente");
         }
         currentUser.assertPuedeOperarSobreSucursal(request.branchId());
 
@@ -233,7 +233,7 @@ public class InventarioService {
     private Long resolverSucursal(Long branchIdFromRequest) {
         if (currentUser.isAdmin()) {
             if (branchIdFromRequest == null) {
-                throw new ValidacionException("campo 'branchId': es obligatorio para ADMIN_GENERAL");
+                throw new ValidacionException("Debes seleccionar la sucursal para la que se registra el movimiento");
             }
             return branchIdFromRequest;
         }

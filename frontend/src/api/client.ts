@@ -38,11 +38,13 @@ function normalizeError(error: AxiosError<ApiError>): ApiError {
   if (data && typeof data === 'object' && typeof data.message === 'string') {
     return data;
   }
+  // Sin respuesta del backend (red caída, timeout, CORS, etc.): nunca se expone
+  // el texto crudo de Axios/el navegador (suele venir en inglés y es técnico).
   return {
     timestamp: new Date().toISOString(),
     status: error.response?.status ?? 0,
-    error: error.response?.statusText || 'Error de red',
-    message: error.message || 'No se pudo conectar con el servidor',
+    error: 'Error de conexión',
+    message: 'No se pudo conectar con el servidor. Revisa tu conexión e intenta nuevamente.',
     path: error.config?.url ?? '',
   };
 }

@@ -67,7 +67,7 @@ public class TransferenciaService {
 
         if (origen.getId().equals(destino.getId())) {
             throw new ValidacionException(
-                    "campo 'sucursalOrigenId': no puede coincidir con la sucursal destino");
+                    "La sucursal de origen no puede ser la misma que la de destino");
         }
 
         Transferencia transferencia = transferenciaRepository.save(Transferencia.builder()
@@ -136,7 +136,7 @@ public class TransferenciaService {
         BigDecimal recibida = request.cantidadRecibida();
         if (recibida.compareTo(enviada) > 0) {
             throw new ValidacionException(
-                    "campo 'cantidadRecibida': no puede superar la cantidad enviada (" + enviada + ")");
+                    "La cantidad recibida no puede superar la cantidad enviada (" + enviada + ")");
         }
 
         if (recibida.signum() > 0) {
@@ -251,7 +251,7 @@ public class TransferenciaService {
     private Long resolverDestino(Long sucursalDestinoIdFromRequest) {
         if (currentUser.isAdmin()) {
             if (sucursalDestinoIdFromRequest == null) {
-                throw new ValidacionException("campo 'sucursalDestinoId': es obligatorio para ADMIN_GENERAL");
+                throw new ValidacionException("Debes seleccionar la sucursal de destino");
             }
             return sucursalDestinoIdFromRequest;
         }
@@ -261,7 +261,7 @@ public class TransferenciaService {
     private void exigirEstado(Transferencia transferencia, EstadoTransferencia esperado, String accion) {
         if (transferencia.getEstado() != esperado) {
             throw new TransferenciaInvalidaException(
-                    "La transferencia está en estado " + transferencia.getEstado()
+                    "La transferencia está " + transferencia.getEstado().etiqueta()
                             + " y no puede " + accion);
         }
     }

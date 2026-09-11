@@ -13,5 +13,19 @@ public enum EstadoTransferencia {
     CON_FALTANTES,
     REENVIO_SOLICITADO,
     CERRADA_AJUSTE,
-    CERRADA_RECLAMACION
+    CERRADA_RECLAMACION;
+
+    /** Nombre en español natural, para usar en mensajes dirigidos al usuario final. */
+    public String etiqueta() {
+        return switch (this) {
+            case PENDIENTE -> "pendiente";
+            case RECHAZADA -> "rechazada";
+            case EN_TRANSITO -> "en tránsito";
+            case COMPLETADA -> "completada";
+            case CON_FALTANTES -> "con faltantes";
+            case REENVIO_SOLICITADO -> "con reenvío solicitado";
+            case CERRADA_AJUSTE -> "cerrada por ajuste";
+            case CERRADA_RECLAMACION -> "cerrada por reclamación";
+        };
+    }
 }

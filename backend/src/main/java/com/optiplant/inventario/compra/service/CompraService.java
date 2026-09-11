@@ -133,7 +133,7 @@ public class CompraService {
     private Long resolverSucursal(Long branchIdFromRequest) {
         if (currentUser.isAdmin()) {
             if (branchIdFromRequest == null) {
-                throw new ValidacionException("campo 'branchId': es obligatorio para ADMIN_GENERAL");
+                throw new ValidacionException("Debes seleccionar la sucursal para la que se registra la orden");
             }
             return branchIdFromRequest;
         }

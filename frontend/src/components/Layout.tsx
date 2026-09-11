@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   Package,
+  Receipt,
   ShieldCheck,
   ShoppingCart,
   Warehouse,
@@ -29,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/products', label: 'Productos', icon: Package },
   { to: '/inventory', label: 'Inventario', icon: Warehouse },
   { to: '/purchases', label: 'Compras', icon: ShoppingCart },
+  { to: '/sales', label: 'Ventas', icon: Receipt },
   { to: '/admin', label: 'Administración', icon: ShieldCheck, roles: ['ADMIN_GENERAL'] },
 ];
 

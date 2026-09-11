@@ -76,7 +76,7 @@ public class VentaService {
             BigDecimal precio = linea.priceListId() != null
                     ? listaPrecioService.resolverPrecio(linea.priceListId(), linea.productId())
                     : requerido(linea.precioUnitario(),
-                            "campo 'precioUnitario': es obligatorio cuando la línea no referencia priceListId");
+                            "Debes indicar un precio unitario o elegir una lista de precios para cada línea");
             BigDecimal descuento = linea.descuento() != null ? linea.descuento() : BigDecimal.ZERO;
             resueltas.add(new LineaResuelta(producto, linea.cantidad(), precio, descuento));
             requeridoPorProducto.merge(producto.getId(), linea.cantidad(), BigDecimal::add);
@@ -152,7 +152,7 @@ public class VentaService {
     private Long resolverSucursal(Long branchIdFromRequest) {
         if (currentUser.isAdmin()) {
             if (branchIdFromRequest == null) {
-                throw new ValidacionException("campo 'branchId': es obligatorio para ADMIN_GENERAL");
+                throw new ValidacionException("Debes seleccionar la sucursal para la que se registra la venta");
             }
             return branchIdFromRequest;
         }

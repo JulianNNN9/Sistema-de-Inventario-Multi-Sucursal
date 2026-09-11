@@ -11,16 +11,16 @@ import java.math.BigDecimal;
 /** Cuerpo de {@code POST /api/v1/inventory-movements} (RF-03, RF-04, RF-07). */
 public record MovimientoRequest(
 
-        @NotNull(message = "productId es obligatorio")
+        @NotNull(message = "debes seleccionar un producto")
         Long productId,
 
-        @NotNull(message = "branchId es obligatorio")
+        @NotNull(message = "debes seleccionar una sucursal")
         Long branchId,
 
-        @NotNull(message = "tipo es obligatorio")
+        @NotNull(message = "debes seleccionar el tipo de movimiento")
         TipoMovimiento tipo,
 
-        @NotNull(message = "motivo es obligatorio")
+        @NotNull(message = "debes seleccionar el motivo del movimiento")
         MotivoMovimiento motivo,
 
         @NotNull(message = "la cantidad es obligatoria")

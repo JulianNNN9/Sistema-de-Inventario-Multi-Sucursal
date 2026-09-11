@@ -52,11 +52,11 @@ public class ListaPrecioService {
 
         Set<Long> productosVistos = new HashSet<>();
         for (PriceListItemRequest item : request.items()) {
+            Producto producto = productoService.getEntityById(item.productId());
             if (!productosVistos.add(item.productId())) {
                 throw new ValidacionException(
-                        "campo 'items': el producto " + item.productId() + " está repetido en la lista");
+                        "El producto \"" + producto.getNombre() + "\" está repetido en la lista");
             }
-            Producto producto = productoService.getEntityById(item.productId());
             lista.addDetalle(ListaPrecioDetalle.builder()
                     .producto(producto)
                     .precio(item.precio())
@@ -75,13 +75,12 @@ public class ListaPrecioService {
     /** Precio de un producto en una lista (RF-15). Usado por {@code VentaService}. */
     @Transactional(readOnly = true)
     public BigDecimal resolverPrecio(Long priceListId, Long productId) {
-        if (!listaPrecioRepository.existsById(priceListId)) {
-            throw new RecursoNoEncontradoException("Lista de precios", priceListId);
-        }
+        ListaPrecio lista = listaPrecioRepository.findById(priceListId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Lista de precios", priceListId));
         return listaPrecioDetalleRepository.findByListaIdAndProductoId(priceListId, productId)
                 .map(ListaPrecioDetalle::getPrecio)
                 .orElseThrow(() -> new ValidacionException(
-                        "la lista de precios " + priceListId + " no tiene precio para el producto " + productId));
+                        "La lista de precios \"" + lista.getNombre() + "\" no tiene un precio definido para uno de los productos seleccionados"));
     }
 
     private Sucursal resolverSucursal(Long branchIdFromRequest) {

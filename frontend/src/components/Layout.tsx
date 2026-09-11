@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import type { Rol } from '../types/auth';
+import { ROL_LABEL, type Rol } from '../types/auth';
 import { cn } from '../lib/cn';
 
 interface NavItem {
@@ -37,12 +37,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/logistics', label: 'Logística', icon: Truck, roles: ['ADMIN_GENERAL'] },
   { to: '/admin', label: 'Administración', icon: ShieldCheck, roles: ['ADMIN_GENERAL'] },
 ];
-
-const ROL_LABEL: Record<Rol, string> = {
-  ADMIN_GENERAL: 'Administrador general',
-  GERENTE_SUCURSAL: 'Gerente de sucursal',
-  OPERADOR_INVENTARIO: 'Operador de inventario',
-};
 
 function initials(name: string | null): string {
   if (!name) return '·';

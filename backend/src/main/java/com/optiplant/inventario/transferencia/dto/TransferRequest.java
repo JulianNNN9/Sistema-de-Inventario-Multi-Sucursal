@@ -14,7 +14,7 @@ import java.math.BigDecimal;
  */
 public record TransferRequest(
 
-        @NotNull(message = "productId es obligatorio")
+        @NotNull(message = "debes seleccionar un producto")
         Long productId,
 
         @NotNull(message = "la cantidad es obligatoria")
@@ -22,7 +22,7 @@ public record TransferRequest(
         @Digits(integer = 10, fraction = 2, message = "la cantidad admite hasta 10 enteros y 2 decimales")
         BigDecimal cantidad,
 
-        @NotNull(message = "sucursalOrigenId es obligatorio")
+        @NotNull(message = "debes seleccionar la sucursal de origen")
         Long sucursalOrigenId,
 
         @NotNull(message = "la urgencia es obligatoria")

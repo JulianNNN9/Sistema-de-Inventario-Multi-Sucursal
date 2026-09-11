@@ -14,7 +14,7 @@ import java.util.List;
  */
 public record PurchaseOrderRequest(
 
-        @NotNull(message = "supplierId es obligatorio")
+        @NotNull(message = "debes seleccionar un proveedor")
         Long supplierId,
 
         Long branchId,

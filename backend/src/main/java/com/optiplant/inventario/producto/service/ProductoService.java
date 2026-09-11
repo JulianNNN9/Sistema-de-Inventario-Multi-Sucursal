@@ -33,7 +33,7 @@ public class ProductoService {
     @Transactional
     public ProductoResponse crear(ProductoRequest request) {
         if (productoRepository.existsBySku(request.sku())) {
-            throw new ValidacionException("campo 'sku': ya existe un producto con ese sku");
+            throw new ValidacionException("Ya existe un producto con ese SKU");
         }
         Producto producto = Producto.builder()
                 .sku(request.sku())

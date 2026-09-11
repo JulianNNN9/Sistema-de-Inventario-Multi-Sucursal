@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 /** Línea de {@code POST /api/v1/purchase-orders} (RF-09). */
 public record PurchaseOrderLineRequest(
 
-        @NotNull(message = "productId es obligatorio")
+        @NotNull(message = "debes seleccionar un producto")
         Long productId,
 
         @NotNull(message = "la cantidad es obligatoria")

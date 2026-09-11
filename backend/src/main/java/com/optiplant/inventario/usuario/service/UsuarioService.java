@@ -32,7 +32,7 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponse crear(UsuarioRequest request) {
         if (usuarioRepository.existsByEmail(request.email())) {
-            throw new ValidacionException("campo 'email': ya existe un usuario con ese email");
+            throw new ValidacionException("Ya existe un usuario registrado con ese correo electrónico");
         }
         Sucursal sucursal = resolverSucursal(request.rol(), request.sucursalId());
 
@@ -73,13 +73,13 @@ public class UsuarioService {
         if (rol == Rol.ADMIN_GENERAL) {
             if (sucursalId != null) {
                 throw new ValidacionException(
-                        "campo 'sucursalId': ADMIN_GENERAL no puede tener sucursal asignada");
+                        "Un " + rol.etiqueta() + " no pertenece a ninguna sucursal en particular");
             }
             return null;
         }
         if (sucursalId == null) {
             throw new ValidacionException(
-                    "campo 'sucursalId': es obligatorio para el rol " + rol.name());
+                    "Debes seleccionar una sucursal para un usuario con rol " + rol.etiqueta());
         }
         return sucursalService.getEntityById(sucursalId);
     }

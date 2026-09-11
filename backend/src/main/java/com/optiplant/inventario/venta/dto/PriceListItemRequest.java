@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 /** Ítem de {@code POST /api/v1/price-lists} (RF-15). */
 public record PriceListItemRequest(
 
-        @NotNull(message = "productId es obligatorio")
+        @NotNull(message = "debes seleccionar un producto")
         Long productId,
 
         @NotNull(message = "el precio es obligatorio")

@@ -5,6 +5,7 @@ import com.optiplant.inventario.compra.dto.PurchaseOrderRequest;
 import com.optiplant.inventario.compra.dto.PurchaseOrderResponse;
 import com.optiplant.inventario.compra.dto.PurchaseOrderSummaryResponse;
 import com.optiplant.inventario.compra.service.CompraService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * de ADMIN / OPERADOR (Sección 4.2: "Registrar compras"); las consultas las
  * hacen los tres roles, acotadas a la sucursal propia salvo ADMIN.
  */
+@Tag(name = "Compras", description = "Órdenes de compra y confirmación de recepción (Módulo 2).")
 @RestController
 @RequestMapping("/api/v1/purchase-orders")
 @RequiredArgsConstructor

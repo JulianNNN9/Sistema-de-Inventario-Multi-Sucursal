@@ -10,6 +10,7 @@ import com.optiplant.inventario.transferencia.dto.TransferRequest;
 import com.optiplant.inventario.transferencia.dto.TransferResponse;
 import com.optiplant.inventario.transferencia.entity.EstadoTransferencia;
 import com.optiplant.inventario.transferencia.service.TransferenciaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  * módulos, ADMIN_GENERAL NO puede aprobar/despachar/recibir/resolver (la matriz
  * lo marca explícitamente ✘ en esas 4 filas).
  */
+@Tag(name = "Transferencias", description = "Ciclo de vida completo de una transferencia entre sucursales (Módulo 4).")
 @RestController
 @RequestMapping("/api/v1/transfers")
 @RequiredArgsConstructor

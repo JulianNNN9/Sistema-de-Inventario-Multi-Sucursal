@@ -4,6 +4,7 @@ import com.optiplant.inventario.common.dto.PageResponse;
 import com.optiplant.inventario.venta.dto.PriceListRequest;
 import com.optiplant.inventario.venta.dto.PriceListResponse;
 import com.optiplant.inventario.venta.service.ListaPrecioService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Listas de precios (RF-15). El alta forma parte del flujo de ventas
  * (ADMIN / OPERADOR); la consulta la hacen los tres roles.
  */
+@Tag(name = "Listas de precios", description = "Listas de precios globales o por sucursal (Módulo 3).")
 @RestController
 @RequestMapping("/api/v1/price-lists")
 @RequiredArgsConstructor

@@ -3,6 +3,7 @@ package com.optiplant.inventario.inventario.controller;
 import com.optiplant.inventario.common.dto.PageResponse;
 import com.optiplant.inventario.inventario.dto.InventarioResponse;
 import com.optiplant.inventario.inventario.service.InventarioService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Disponible para los tres roles (Sección 4.2). Endpoint separado de
  * {@code SucursalController} para no heredar su restricción a ADMIN_GENERAL.
  */
+@Tag(name = "Inventario por sucursal", description = "Consulta del inventario de una sucursal específica (Módulo 1).")
 @RestController
 @RequestMapping("/api/v1/branches")
 @RequiredArgsConstructor

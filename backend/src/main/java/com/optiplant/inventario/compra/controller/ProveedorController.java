@@ -4,6 +4,7 @@ import com.optiplant.inventario.common.dto.PageResponse;
 import com.optiplant.inventario.compra.dto.ProveedorRequest;
 import com.optiplant.inventario.compra.dto.ProveedorResponse;
 import com.optiplant.inventario.compra.service.ProveedorService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * (ADMIN / OPERADOR); el listado lo consultan los tres roles, entre otros para
  * el histórico de compras por proveedor (HU-06).
  */
+@Tag(name = "Proveedores", description = "Alta, edición y listado de proveedores (Módulo 2).")
 @RestController
 @RequestMapping("/api/v1/suppliers")
 @RequiredArgsConstructor

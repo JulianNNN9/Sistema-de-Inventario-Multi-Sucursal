@@ -4,6 +4,7 @@ import com.optiplant.inventario.common.dto.PageResponse;
 import com.optiplant.inventario.sucursal.dto.SucursalRequest;
 import com.optiplant.inventario.sucursal.dto.SucursalResponse;
 import com.optiplant.inventario.sucursal.service.SucursalService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * sucursales (RF-02, HU-02) y para elegir origen/destino en transferencias
  * (Módulo 4).
  */
+@Tag(name = "Sucursales", description = "Alta y listado de sucursales de la red (Módulo 0).")
 @RestController
 @RequestMapping("/api/v1/branches")
 @RequiredArgsConstructor

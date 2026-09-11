@@ -4,6 +4,7 @@ import com.optiplant.inventario.rebalanceo.dto.RebalanceApproveRequest;
 import com.optiplant.inventario.rebalanceo.dto.Sugerencia;
 import com.optiplant.inventario.rebalanceo.service.RebalanceoService;
 import com.optiplant.inventario.transferencia.dto.TransferResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import java.util.List;
  * Recomendador de rebalanceo de inventario (RF-31..RF-34, Módulo 7). Solo
  * ADMIN_GENERAL (Sección 4.2).
  */
+@Tag(name = "Rebalanceo", description = "Sugerencias de traslado entre sucursales por déficit/superávit (Módulo 7).")
 @RestController
 @RequestMapping("/api/v1/rebalance-suggestions")
 @RequiredArgsConstructor

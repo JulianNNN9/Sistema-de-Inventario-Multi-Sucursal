@@ -5,6 +5,7 @@ import com.optiplant.inventario.producto.dto.ProductoRequest;
 import com.optiplant.inventario.producto.dto.ProductoResponse;
 import com.optiplant.inventario.producto.dto.ProductoUpdateRequest;
 import com.optiplant.inventario.producto.service.ProductoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  * productos/inventario de su propia sucursal", Sección 4.2); el acotado por
  * sucursal se resuelve en el Service.
  */
+@Tag(name = "Productos", description = "Catálogo de productos (Módulo 1).")
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor

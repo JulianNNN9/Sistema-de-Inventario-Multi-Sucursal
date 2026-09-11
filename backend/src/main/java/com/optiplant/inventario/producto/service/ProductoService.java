@@ -4,6 +4,7 @@ import com.optiplant.inventario.common.dto.PageResponse;
 import com.optiplant.inventario.common.exception.ConflictoEstadoException;
 import com.optiplant.inventario.common.exception.RecursoNoEncontradoException;
 import com.optiplant.inventario.common.exception.ValidacionException;
+import com.optiplant.inventario.inventario.entity.InventarioSucursal;
 import com.optiplant.inventario.inventario.repository.InventarioSucursalRepository;
 import com.optiplant.inventario.producto.dto.ProductoRequest;
 import com.optiplant.inventario.producto.dto.ProductoResponse;
@@ -11,6 +12,7 @@ import com.optiplant.inventario.producto.dto.ProductoUpdateRequest;
 import com.optiplant.inventario.producto.entity.Producto;
 import com.optiplant.inventario.producto.repository.ProductoRepository;
 import com.optiplant.inventario.security.CurrentUser;
+import com.optiplant.inventario.sucursal.repository.SucursalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,8 +30,15 @@ public class ProductoService {
 
     private final ProductoRepository productoRepository;
     private final InventarioSucursalRepository inventarioSucursalRepository;
+    private final SucursalRepository sucursalRepository;
     private final CurrentUser currentUser;
 
+    /**
+     * El catálogo visible por sucursal ({@link #listar}) se resuelve por
+     * existencia de {@link InventarioSucursal}, así que un producto creado por
+     * un usuario no-ADMIN debe quedar con una fila de existencias (en 0) en su
+     * propia sucursal; de lo contrario nunca aparecería en su propio listado.
+     */
     @Transactional
     public ProductoResponse crear(ProductoRequest request) {
         if (productoRepository.existsBySku(request.sku())) {
@@ -40,7 +49,16 @@ public class ProductoService {
                 .nombre(request.nombre())
                 .unidadMedidaBase(request.unidadMedidaBase())
                 .build();
-        return toResponse(productoRepository.save(producto));
+        producto = productoRepository.save(producto);
+
+        if (!currentUser.isAdmin()) {
+            inventarioSucursalRepository.save(InventarioSucursal.builder()
+                    .producto(producto)
+                    .sucursal(sucursalRepository.getReferenceById(currentUser.sucursalId()))
+                    .build());
+        }
+
+        return toResponse(producto);
     }
 
     @Transactional(readOnly = true)

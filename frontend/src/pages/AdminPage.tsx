@@ -8,6 +8,7 @@ import { createUser, updateUser } from '../api/usuarios';
 import { useBranches } from '../hooks/useBranches';
 import { useMutation } from '../hooks/useMutation';
 import { useUsuarios } from '../hooks/useUsuarios';
+import { useToast } from '../context/ToastContext';
 import { cn } from '../lib/cn';
 import { ROL_LABEL, ROL_OPTIONS, type Rol } from '../types/auth';
 import type { Usuario } from '../types/usuario';
@@ -73,6 +74,7 @@ interface UsersModalProps {
 function UsersModal({ open, onClose }: UsersModalProps) {
   const { usuarios, loading, refetch } = useUsuarios();
   const { branches } = useBranches();
+  const { showSuccess, showError } = useToast();
   const createM = useMutation(createUser);
   const updateM = useMutation(updateUser);
 
@@ -126,6 +128,7 @@ function UsersModal({ open, onClose }: UsersModalProps) {
           sucursalId: necesitaSucursal && sucursalId ? Number(sucursalId) : undefined,
           password: password || undefined,
         });
+        showSuccess(`Usuario "${nombre}" actualizado.`);
       } else {
         await createM.mutate({
           nombre,
@@ -134,11 +137,13 @@ function UsersModal({ open, onClose }: UsersModalProps) {
           rol,
           sucursalId: necesitaSucursal && sucursalId ? Number(sucursalId) : undefined,
         });
+        showSuccess(`Usuario "${nombre}" creado.`);
       }
       startCreate();
       refetch();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo guardar el usuario.');
+      /* el error también se muestra en el formulario */
     }
   }
 
@@ -280,6 +285,7 @@ interface BranchesModalProps {
 
 function BranchesModal({ open, onClose }: BranchesModalProps) {
   const { branches, loading, refetch } = useBranches();
+  const { showSuccess, showError } = useToast();
   const { mutate, submitting, error, resetError } = useMutation(createBranch);
   const [busqueda, setBusqueda] = useState('');
   const [nombre, setNombre] = useState('');
@@ -294,12 +300,14 @@ function BranchesModal({ open, onClose }: BranchesModalProps) {
     event.preventDefault();
     try {
       await mutate({ nombre, ciudad: ciudad || undefined });
+      showSuccess(`Sucursal "${nombre}" creada.`);
       setNombre('');
       setCiudad('');
       resetError();
       refetch();
-    } catch {
-      /* error mostrado */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo crear la sucursal.');
+      /* el error también se muestra en el formulario */
     }
   }
 

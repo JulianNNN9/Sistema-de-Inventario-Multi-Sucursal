@@ -26,6 +26,7 @@ import { useBranches } from '../hooks/useBranches';
 import { useDashboard } from '../hooks/useDashboard';
 import { useMutation } from '../hooks/useMutation';
 import { useRebalanceSuggestions } from '../hooks/useRebalanceSuggestions';
+import { useToast } from '../context/ToastContext';
 import { formatCurrency, formatNumber } from '../lib/format';
 import type { EstadoTransferenciaActivo, InventoryRotationItem } from '../types/dashboard';
 import type { Sugerencia } from '../types/rebalanceo';
@@ -264,6 +265,7 @@ interface RebalancePanelProps {
 function RebalancePanel({ onApproved }: RebalancePanelProps) {
   const { data, loading, error, refetch } = useRebalanceSuggestions();
   const { mutate, submitting, error: approveError, resetError } = useMutation(approveRebalanceSuggestion);
+  const { showSuccess, showError } = useToast();
   const [target, setTarget] = useState<string | null>(null);
 
   async function handleApprove(s: Sugerencia) {
@@ -276,10 +278,12 @@ function RebalancePanel({ onApproved }: RebalancePanelProps) {
         sucursalOrigenId: s.sucursalOrigenId,
         sucursalDestinoId: s.sucursalDestinoId,
       });
+      showSuccess('Sugerencia de rebalanceo aprobada.');
       refetch();
       onApproved();
-    } catch {
-      /* error mostrado abajo */
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo aprobar la sugerencia.');
+      /* el error también se muestra abajo */
     } finally {
       setTarget(null);
     }

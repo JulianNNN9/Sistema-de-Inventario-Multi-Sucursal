@@ -26,7 +26,12 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Miscellaneous
+# AI Tools & Graphify
+.claude/
+graphify-out/
+CLAUDE.md
+
+# Documentation / Internal Docs
 ROADMAP_CLAUDE_CODE.md
 NEWUIUX.md
 USO_IA.md

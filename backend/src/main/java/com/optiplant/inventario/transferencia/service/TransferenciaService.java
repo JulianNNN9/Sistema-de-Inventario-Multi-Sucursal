@@ -24,7 +24,9 @@ import com.optiplant.inventario.transferencia.repository.TransferenciaEventoRepo
 import com.optiplant.inventario.transferencia.repository.TransferenciaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -208,20 +210,30 @@ public class TransferenciaService {
         return toResponse(transferencia);
     }
 
+    /**
+     * RF-23/RF-24 (Módulo 5): {@code sort} acepta {@code priority} (urgencia
+     * ALTA&gt;MEDIA&gt;BAJA), {@code cost} (proxy: cantidad_solicitada desc, no hay
+     * campo de costo en el modelo) o {@code time} (fecha_estimada_llegada asc);
+     * cualquier otro valor no ordena.
+     */
     @Transactional(readOnly = true)
-    public PageResponse<TransferResponse> listar(EstadoTransferencia estado, Long branchIdParam, Pageable pageable) {
+    public PageResponse<TransferResponse> listar(EstadoTransferencia estado, Long branchIdParam,
+                                                 String sort, int page, int size) {
         Long branchId = currentUser.isAdmin() ? branchIdParam : currentUser.sucursalId();
-        Page<Transferencia> page;
-        if (estado == null && branchId == null) {
-            page = transferenciaRepository.findAll(pageable);
-        } else if (estado == null) {
-            page = transferenciaRepository.findByBranch(branchId, pageable);
-        } else if (branchId == null) {
-            page = transferenciaRepository.findByEstado(estado, pageable);
-        } else {
-            page = transferenciaRepository.findByEstadoAndBranch(estado, branchId, pageable);
+        Page<Transferencia> resultado = "priority".equals(sort)
+                ? transferenciaRepository.searchOrderByPriority(estado, branchId, PageRequest.of(page, size))
+                : transferenciaRepository.search(estado, branchId, PageRequest.of(page, size, resolverOrden(sort)));
+        return PageResponse.from(resultado.map(this::toResponse));
+    }
+
+    private Sort resolverOrden(String sort) {
+        if ("cost".equals(sort)) {
+            return Sort.by(Sort.Direction.DESC, "cantidadSolicitada");
         }
-        return PageResponse.from(page.map(this::toResponse));
+        if ("time".equals(sort)) {
+            return Sort.by(Sort.Direction.ASC, "fechaEstimadaLlegada");
+        }
+        return Sort.unsorted();
     }
 
     @Transactional(readOnly = true)

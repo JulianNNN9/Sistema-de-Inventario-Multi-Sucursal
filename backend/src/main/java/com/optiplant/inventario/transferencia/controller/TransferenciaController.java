@@ -76,8 +76,12 @@ public class TransferenciaController {
     public PageResponse<TransferResponse> listar(
             @RequestParam(name = "estado", required = false) EstadoTransferencia estado,
             @RequestParam(name = "branchId", required = false) Long branchId,
+            @RequestParam(name = "sort", required = false) String sort,
             @PageableDefault(size = 20) Pageable pageable) {
-        return transferenciaService.listar(estado, branchId, pageable);
+        // page/size de Pageable; "sort" se interpreta aparte (RF-23: priority|cost|time,
+        // no son propiedades JPA reales de Transferencia salvo "time").
+        return transferenciaService.listar(estado, branchId, sort,
+                pageable.getPageNumber(), pageable.getPageSize());
     }
 
     @GetMapping("/{id}/events")

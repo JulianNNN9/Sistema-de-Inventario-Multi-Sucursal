@@ -6,6 +6,7 @@ import {
   Boxes,
   PackageMinus,
   PackagePlus,
+  Shuffle,
   TrendingUp,
 } from 'lucide-react';
 import {
@@ -17,13 +18,17 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Badge, Card, EmptyState, PageHeader, Select, Skeleton } from '../components/ui';
+import { approveRebalanceSuggestion } from '../api/rebalanceo';
+import { Badge, Button, Card, EmptyState, PageHeader, Select, Skeleton } from '../components/ui';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { useAuth } from '../hooks/useAuth';
 import { useBranches } from '../hooks/useBranches';
 import { useDashboard } from '../hooks/useDashboard';
+import { useMutation } from '../hooks/useMutation';
+import { useRebalanceSuggestions } from '../hooks/useRebalanceSuggestions';
 import { formatCurrency, formatNumber } from '../lib/format';
 import type { EstadoTransferenciaActivo, InventoryRotationItem } from '../types/dashboard';
+import type { Sugerencia } from '../types/rebalanceo';
 
 const ESTADO_LABEL: Record<EstadoTransferenciaActivo, string> = {
   PENDIENTE: 'Pendientes',
@@ -53,7 +58,7 @@ export function DashboardPage() {
   const [filterBranch, setFilterBranch] = useState('');
   const branchId = filterBranch ? Number(filterBranch) : undefined;
 
-  const { data, loading, error } = useDashboard({ branchId, includeBranchComparison: isAdmin });
+  const { data, loading, error, refetch } = useDashboard({ branchId, includeBranchComparison: isAdmin });
 
   const chartData = useMemo(
     () =>
@@ -83,6 +88,8 @@ export function DashboardPage() {
       />
 
       {error && <ErrorAlert message={error} />}
+
+      {isAdmin && <RebalancePanel onApproved={refetch} />}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -241,6 +248,100 @@ export function DashboardPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+function suggestionKey(s: Sugerencia): string {
+  return `${s.productId}-${s.sucursalOrigenId}-${s.sucursalDestinoId}`;
+}
+
+interface RebalancePanelProps {
+  /** RF-33: tras aprobar, refresca el dashboard (transferencias activas incluidas). */
+  onApproved: () => void;
+}
+
+/** RF-31..RF-34: panel de sugerencias de rebalanceo, solo ADMIN_GENERAL. */
+function RebalancePanel({ onApproved }: RebalancePanelProps) {
+  const { data, loading, error, refetch } = useRebalanceSuggestions();
+  const { mutate, submitting, error: approveError, resetError } = useMutation(approveRebalanceSuggestion);
+  const [target, setTarget] = useState<string | null>(null);
+
+  async function handleApprove(s: Sugerencia) {
+    resetError();
+    setTarget(suggestionKey(s));
+    try {
+      await mutate({
+        productId: s.productId,
+        cantidadSugerida: s.cantidadSugerida,
+        sucursalOrigenId: s.sucursalOrigenId,
+        sucursalDestinoId: s.sucursalDestinoId,
+      });
+      refetch();
+      onApproved();
+    } catch {
+      /* error mostrado abajo */
+    } finally {
+      setTarget(null);
+    }
+  }
+
+  return (
+    <Card>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">Sugerencias de rebalanceo</h2>
+          <p className="text-xs text-slate-500">Traslados recomendados entre sucursales, por urgencia (RF-31)</p>
+        </div>
+        <Shuffle className="h-4 w-4 text-slate-400" aria-hidden />
+      </div>
+      {error && <ErrorAlert message={error} className="mb-3" />}
+      {approveError && <ErrorAlert message={approveError} className="mb-3" />}
+      {loading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
+        </div>
+      ) : data.length === 0 ? (
+        <EmptyState
+          icon={Shuffle}
+          title="Sin sugerencias"
+          description="No hay traslados recomendados con los niveles de stock actuales."
+        />
+      ) : (
+        <ul className="space-y-2.5">
+          {data.map((s) => {
+            const key = suggestionKey(s);
+            return (
+              <li
+                key={key}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-3.5 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-900">
+                    {s.sku} · {s.productoNombre}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {s.sucursalOrigenNombre} → {s.sucursalDestinoNombre} · {formatNumber(s.cantidadSugerida)} u.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge tone={s.urgencia === 'ALTA' ? 'danger' : 'info'}>{s.urgencia}</Badge>
+                  <Button
+                    size="sm"
+                    onClick={() => handleApprove(s)}
+                    loading={submitting && target === key}
+                    disabled={submitting}
+                  >
+                    Aprobar
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
   );
 }
 

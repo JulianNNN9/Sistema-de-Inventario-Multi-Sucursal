@@ -6,6 +6,7 @@ import { ComprasPage } from './pages/ComprasPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { InventarioPage } from './pages/InventarioPage';
 import { LoginPage } from './pages/LoginPage';
+import { LogisticaPage } from './pages/LogisticaPage';
 import { NotAuthorizedPage } from './pages/NotAuthorizedPage';
 import { ProductosPage } from './pages/ProductosPage';
 import { TransferenciasPage } from './pages/TransferenciasPage';
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="sales" element={<VentasPage />} />
               <Route path="transfers" element={<TransferenciasPage />} />
               <Route element={<RoleGuard allow={['ADMIN_GENERAL']} />}>
+                <Route path="logistics" element={<LogisticaPage />} />
                 <Route path="admin" element={<AdminPage />} />
               </Route>
             </Route>

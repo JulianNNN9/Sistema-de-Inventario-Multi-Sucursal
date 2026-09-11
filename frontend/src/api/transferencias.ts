@@ -9,6 +9,7 @@ import type {
   TransferEvent,
   TransferRequestInput,
 } from '../types/transferencia';
+import type { TransferSort } from '../types/logistica';
 import { apiClient } from './client';
 
 interface ListParams {
@@ -16,6 +17,7 @@ interface ListParams {
   size?: number;
   estado?: EstadoTransferencia;
   branchId?: number;
+  sort?: TransferSort;
 }
 
 export async function listTransfers(params: ListParams = {}): Promise<PageResponse<Transfer>> {

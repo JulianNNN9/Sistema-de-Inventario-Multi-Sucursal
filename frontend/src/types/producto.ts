@@ -15,15 +15,3 @@ export interface ProductoUpdateInput {
   nombre: string;
   unidadMedidaBase: string;
 }
-
-export interface ProductoUnidad {
-  id: number;
-  productoId: number;
-  nombreUnidad: string;
-  factorConversion: number;
-}
-
-export interface ProductoUnidadInput {
-  nombreUnidad: string;
-  factorConversion: number;
-}

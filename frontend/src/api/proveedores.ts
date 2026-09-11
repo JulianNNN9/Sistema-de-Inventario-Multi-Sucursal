@@ -15,3 +15,8 @@ export async function createSupplier(body: ProveedorInput): Promise<Proveedor> {
   const { data } = await apiClient.post<Proveedor>('/suppliers', body);
   return data;
 }
+
+export async function updateSupplier(id: number, body: ProveedorInput): Promise<Proveedor> {
+  const { data } = await apiClient.put<Proveedor>(`/suppliers/${id}`, body);
+  return data;
+}

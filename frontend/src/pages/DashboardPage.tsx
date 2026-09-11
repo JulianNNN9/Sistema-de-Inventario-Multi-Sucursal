@@ -73,7 +73,7 @@ export function DashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title={`Hola, ${usuario ?? ''}`.trim()}
-        description="Resumen operativo: ventas, rotación de inventario, transferencias activas y alertas de reabastecimiento (RF-26..RF-30)."
+        description="Resumen operativo: ventas, rotación de inventario, transferencias activas y alertas de reabastecimiento."
         actions={
           isAdmin ? (
             <Select
@@ -96,7 +96,7 @@ export function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">Comparativa de ventas</h2>
-              <p className="text-xs text-slate-500">Mes actual vs. los 3 meses anteriores (RF-26)</p>
+              <p className="text-xs text-slate-500">Mes actual vs. los 3 meses anteriores</p>
             </div>
             <TrendingUp className="h-4 w-4 text-slate-400" aria-hidden />
           </div>
@@ -130,7 +130,7 @@ export function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">Transferencias activas</h2>
-              <p className="text-xs text-slate-500">Por estado no terminal (RF-28)</p>
+              <p className="text-xs text-slate-500">Por estado no terminal</p>
             </div>
             <ArrowLeftRight className="h-4 w-4 text-slate-400" aria-hidden />
           </div>
@@ -176,7 +176,7 @@ export function DashboardPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Alertas de reabastecimiento</h2>
-            <p className="text-xs text-slate-500">Productos en el mínimo o por debajo (RF-29)</p>
+            <p className="text-xs text-slate-500">Productos en el mínimo o por debajo</p>
           </div>
           <AlertTriangle className="h-4 w-4 text-slate-400" aria-hidden />
         </div>
@@ -215,7 +215,7 @@ export function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">Comparativa entre sucursales</h2>
-              <p className="text-xs text-slate-500">Ventas del mes y rotación de 30 días (RF-30)</p>
+              <p className="text-xs text-slate-500">Ventas del mes y rotación de 30 días</p>
             </div>
             <Boxes className="h-4 w-4 text-slate-400" aria-hidden />
           </div>
@@ -290,7 +290,7 @@ function RebalancePanel({ onApproved }: RebalancePanelProps) {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">Sugerencias de rebalanceo</h2>
-          <p className="text-xs text-slate-500">Traslados recomendados entre sucursales, por urgencia (RF-31)</p>
+          <p className="text-xs text-slate-500">Traslados recomendados entre sucursales, por urgencia</p>
         </div>
         <Shuffle className="h-4 w-4 text-slate-400" aria-hidden />
       </div>

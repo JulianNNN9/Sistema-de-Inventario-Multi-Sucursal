@@ -57,7 +57,8 @@ class CompraServiceTest {
     @InjectMocks
     private CompraService compraService;
 
-    private final Proveedor proveedor = Proveedor.builder().id(1L).nombre("Ferretería").build();
+    private final Proveedor proveedor = Proveedor.builder()
+            .id(1L).nombre("Ferretería").frecuenciaPago("30 días").build();
     private final Sucursal sucursal = Sucursal.builder().id(1L).nombre("Norte").ciudad("Cali").build();
     private final Producto productoA = Producto.builder()
             .id(10L).sku("A").nombre("Prod A").unidadMedidaBase("u").build();
@@ -82,7 +83,7 @@ class CompraServiceTest {
     void crear_adminSinBranchId_lanzaValidacion() {
         when(currentUser.isAdmin()).thenReturn(true);
         PurchaseOrderRequest request = new PurchaseOrderRequest(
-                1L, null, null,
+                1L, null,
                 List.of(new PurchaseOrderLineRequest(10L, BigDecimal.TEN, BigDecimal.TEN, null)));
 
         assertThrows(ValidacionException.class, () -> compraService.crear(request));
@@ -93,7 +94,7 @@ class CompraServiceTest {
         when(currentUser.isAdmin()).thenReturn(false);
         when(currentUser.sucursalId()).thenReturn(1L);
         PurchaseOrderRequest request = new PurchaseOrderRequest(
-                1L, 2L, null,
+                1L, 2L,
                 List.of(new PurchaseOrderLineRequest(10L, BigDecimal.TEN, BigDecimal.TEN, null)));
 
         assertThrows(AccessDeniedException.class, () -> compraService.crear(request));
@@ -112,13 +113,14 @@ class CompraServiceTest {
         });
 
         PurchaseOrderRequest request = new PurchaseOrderRequest(
-                1L, 1L, "30 días",
+                1L, 1L,
                 List.of(new PurchaseOrderLineRequest(10L, new BigDecimal("5"), new BigDecimal("200"), null)));
 
         PurchaseOrderResponse response = compraService.crear(request);
 
         assertEquals(77L, response.id());
         assertEquals(EstadoOrdenCompra.PENDIENTE, response.estado());
+        assertEquals("30 días", response.plazoPago());
         assertEquals(1, response.lineas().size());
         assertEquals(0, response.lineas().get(0).descuento().compareTo(BigDecimal.ZERO));
     }

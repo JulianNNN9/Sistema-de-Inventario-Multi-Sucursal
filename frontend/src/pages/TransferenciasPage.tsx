@@ -176,6 +176,7 @@ export function TransferenciasPage() {
                 aria-label={`Aprobar transferencia ${t.id}`}
               >
                 <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+                Aprobar
               </Button>
               <Button
                 size="sm"
@@ -184,26 +185,31 @@ export function TransferenciasPage() {
                 aria-label={`Rechazar transferencia ${t.id}`}
               >
                 <X className="h-4 w-4 text-rose-500" aria-hidden />
+                Rechazar
               </Button>
             </>
           )}
           {canDispatch(t) && (
             <Button size="sm" variant="ghost" onClick={() => setDispatchTarget(t)} aria-label={`Despachar transferencia ${t.id}`}>
               <Send className="h-4 w-4 text-brand-700" aria-hidden />
+              Despachar
             </Button>
           )}
           {canReceive(t) && (
             <Button size="sm" variant="ghost" onClick={() => setReceiveTarget(t)} aria-label={`Recibir transferencia ${t.id}`}>
               <PackageCheck className="h-4 w-4 text-brand-700" aria-hidden />
+              Confirmar recepción
             </Button>
           )}
           {canResolve(t) && (
             <Button size="sm" variant="ghost" onClick={() => setResolveTarget(t)} aria-label={`Resolver faltante ${t.id}`}>
               <RotateCcw className="h-4 w-4 text-amber-600" aria-hidden />
+              Resolver
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={() => setEventsId(t.id)} aria-label={`Historial de la transferencia ${t.id}`}>
             <History className="h-4 w-4" aria-hidden />
+            Historial
           </Button>
         </div>
       ),
@@ -214,7 +220,7 @@ export function TransferenciasPage() {
     <div className="space-y-6">
       <PageHeader
         title="Transferencias"
-        description="Solicitud, aprobación, despacho, recepción y resolución de faltantes (RF-17..RF-21)."
+        description="Solicitud, aprobación, despacho, recepción y resolución de faltantes."
         actions={
           puedeSolicitar ? (
             <Button onClick={() => setRequestOpen(true)}>
@@ -411,6 +417,7 @@ function RequestModal({ open, isAdmin, branches, onClose, onCreated }: RequestMo
         {error && <ErrorAlert message={error} />}
         <Select
           label="Producto"
+          hint="Producto que se necesita trasladar entre sucursales."
           value={productId}
           onChange={(e) => setProductId(e.target.value)}
           options={productOptions}
@@ -420,6 +427,7 @@ function RequestModal({ open, isAdmin, branches, onClose, onCreated }: RequestMo
         <div className="grid grid-cols-2 gap-3">
           <Input
             label="Cantidad"
+            hint="Cantidad solicitada; puede recibirse una cantidad menor."
             type="number"
             step="0.01"
             min="0"
@@ -429,6 +437,7 @@ function RequestModal({ open, isAdmin, branches, onClose, onCreated }: RequestMo
           />
           <Select
             label="Urgencia"
+            hint="Prioridad con la que debería atenderse esta transferencia."
             value={urgencia}
             onChange={(e) => setUrgencia(e.target.value as Urgencia)}
             options={[
@@ -441,6 +450,7 @@ function RequestModal({ open, isAdmin, branches, onClose, onCreated }: RequestMo
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Select
             label="Sucursal origen"
+            hint="Sucursal que deberá aprobar y despachar la mercancía."
             value={sucursalOrigenId}
             onChange={(e) => setSucursalOrigenId(e.target.value)}
             options={branches.map((b) => ({ value: b.id, label: b.nombre }))}
@@ -450,6 +460,7 @@ function RequestModal({ open, isAdmin, branches, onClose, onCreated }: RequestMo
           {isAdmin && (
             <Select
               label="Sucursal destino"
+              hint="Sucursal que recibirá la mercancía solicitada."
               value={sucursalDestinoId}
               onChange={(e) => setSucursalDestinoId(e.target.value)}
               options={branches.map((b) => ({ value: b.id, label: b.nombre }))}
@@ -519,6 +530,7 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
         {error && <ErrorAlert message={error} />}
         <Input
           label="Cantidad enviada"
+          hint="Puede ser menor a la solicitada si no hay existencia suficiente en origen."
           type="number"
           step="0.01"
           min="0"
@@ -528,12 +540,14 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
         />
         <Input
           label="Transportista"
+          hint="Nombre de la persona o empresa encargada del traslado."
           value={transportista}
           onChange={(e) => setTransportista(e.target.value)}
           required
         />
         <Input
           label="Fecha estimada de llegada"
+          hint="Se usa para calcular el cumplimiento de tiempos de entrega."
           type="datetime-local"
           value={fecha}
           onChange={(e) => setFecha(e.target.value)}
@@ -592,10 +606,11 @@ function ReceiveModal({ transfer, onClose, onDone }: ReceiveModalProps) {
         {error && <ErrorAlert message={error} />}
         <p className="text-xs text-slate-500">
           Cantidad enviada: <span className="font-medium">{transfer ? formatNumber(transfer.cantidadEnviada ?? 0) : '—'}</span>.
-          Si recibes menos, la transferencia quedará "Con faltantes" (RF-21).
+          Si recibes menos, la transferencia quedará "Con faltantes".
         </p>
         <Input
           label="Cantidad recibida"
+          hint="Si es menor a la enviada, la transferencia quedará marcada como con faltantes."
           type="number"
           step="0.01"
           min="0"
@@ -666,6 +681,7 @@ function ResolveModal({ transfer, onClose, onDone }: ResolveModalProps) {
         </p>
         <Select
           label="Tratamiento"
+          hint="Cómo se resolverá la diferencia entre lo enviado y lo recibido."
           value={tratamiento}
           onChange={(e) => setTratamiento(e.target.value as TratamientoFaltante)}
           options={[

@@ -70,6 +70,7 @@ export function VentasPage() {
       render: (v) => (
         <Button size="sm" variant="ghost" onClick={() => setReceiptId(v.id)} aria-label={`Ver comprobante ${v.id}`}>
           <Eye className="h-4 w-4" aria-hidden />
+          Ver comprobante
         </Button>
       ),
     },
@@ -79,7 +80,7 @@ export function VentasPage() {
     <div className="space-y-6">
       <PageHeader
         title="Ventas"
-        description="Registro de ventas, comprobantes e histórico (RF-13..RF-16)."
+        description="Registro de ventas, comprobantes e histórico."
         actions={
           canManage ? (
             <>
@@ -302,6 +303,7 @@ function SaleModal({ open, isAdmin, branches, priceLists, onClose, onCreated }: 
           {isAdmin && (
             <Select
               label="Sucursal"
+              hint="Sucursal desde la que se registra la venta y de la que se descuenta el inventario."
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
               options={branches.map((b) => ({ value: b.id, label: b.nombre }))}
@@ -311,6 +313,7 @@ function SaleModal({ open, isAdmin, branches, priceLists, onClose, onCreated }: 
           )}
           <Select
             label="Lista de precios (opcional)"
+            hint="Si eliges una lista, el precio de cada línea se toma de ella automáticamente."
             value={priceListId}
             onChange={(e) => setPriceListId(e.target.value)}
             options={priceLists.map((l) => ({
@@ -334,6 +337,9 @@ function SaleModal({ open, isAdmin, branches, priceLists, onClose, onCreated }: 
               Agregar
             </Button>
           </div>
+          <p className="text-xs text-slate-500">
+            Por cada línea: producto, cantidad, precio (si no hay lista) y descuento opcional (%).
+          </p>
 
           {lineas.map((linea, index) => {
             const listPrice = priceFor(linea.productId);
@@ -395,6 +401,7 @@ function SaleModal({ open, isAdmin, branches, priceLists, onClose, onCreated }: 
                   aria-label={`Eliminar línea ${index + 1}`}
                 >
                   <Trash2 className="h-4 w-4 text-rose-500" aria-hidden />
+                  Eliminar
                 </Button>
               </div>
             );
@@ -555,10 +562,17 @@ function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreat
         <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 pt-4">
           {error && <ErrorAlert message={error} />}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+            <Input
+              label="Nombre"
+              hint="Nombre con el que se identificará esta lista al aplicarla en una venta."
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              required
+            />
             {isAdmin && (
               <Select
                 label="Sucursal"
+                hint="Deja sin seleccionar para crear una lista global (todas las sucursales)."
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
                 options={branches.map((b) => ({ value: b.id, label: b.nombre }))}
@@ -580,6 +594,7 @@ function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreat
                 Agregar
               </Button>
             </div>
+            <p className="text-xs text-slate-500">Define el precio de cada producto incluido en esta lista.</p>
             {items.map((item, index) => (
               <div key={index} className="grid grid-cols-[1fr_auto_auto] gap-2">
                 <Select
@@ -612,6 +627,7 @@ function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreat
                   aria-label={`Eliminar ítem ${index + 1}`}
                 >
                   <Trash2 className="h-4 w-4 text-rose-500" aria-hidden />
+                  Eliminar
                 </Button>
               </div>
             ))}

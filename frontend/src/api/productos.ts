@@ -1,11 +1,5 @@
 import type { PageResponse } from '../types/api';
-import type {
-  Producto,
-  ProductoInput,
-  ProductoUnidad,
-  ProductoUnidadInput,
-  ProductoUpdateInput,
-} from '../types/producto';
+import type { Producto, ProductoInput, ProductoUpdateInput } from '../types/producto';
 import { apiClient } from './client';
 
 interface ListParams {
@@ -36,22 +30,4 @@ export async function updateProduct(id: number, body: ProductoUpdateInput): Prom
 
 export async function deleteProduct(id: number): Promise<void> {
   await apiClient.delete(`/products/${id}`);
-}
-
-export async function listProductUnits(
-  id: number,
-  params: { page?: number; size?: number } = {},
-): Promise<PageResponse<ProductoUnidad>> {
-  const { data } = await apiClient.get<PageResponse<ProductoUnidad>>(`/products/${id}/units`, {
-    params: { page: 0, size: 50, ...params },
-  });
-  return data;
-}
-
-export async function addProductUnit(
-  id: number,
-  body: ProductoUnidadInput,
-): Promise<ProductoUnidad> {
-  const { data } = await apiClient.post<ProductoUnidad>(`/products/${id}/units`, body);
-  return data;
 }

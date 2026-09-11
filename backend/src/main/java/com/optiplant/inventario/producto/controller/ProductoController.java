@@ -3,8 +3,6 @@ package com.optiplant.inventario.producto.controller;
 import com.optiplant.inventario.common.dto.PageResponse;
 import com.optiplant.inventario.producto.dto.ProductoRequest;
 import com.optiplant.inventario.producto.dto.ProductoResponse;
-import com.optiplant.inventario.producto.dto.ProductoUnidadRequest;
-import com.optiplant.inventario.producto.dto.ProductoUnidadResponse;
 import com.optiplant.inventario.producto.dto.ProductoUpdateRequest;
 import com.optiplant.inventario.producto.service.ProductoService;
 import jakarta.validation.Valid;
@@ -25,9 +23,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Catálogo de productos y sus unidades de medida (RF-01, RF-06). Accesible a los
- * tres roles ("CRUD productos/inventario de su propia sucursal", Sección 4.2);
- * el acotado por sucursal se resuelve en el Service.
+ * Catálogo de productos (RF-01). Accesible a los tres roles ("CRUD
+ * productos/inventario de su propia sucursal", Sección 4.2); el acotado por
+ * sucursal se resuelve en el Service.
  */
 @RestController
 @RequestMapping("/api/v1/products")
@@ -65,18 +63,5 @@ public class ProductoController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
-    }
-
-    @GetMapping("/{id}/units")
-    public PageResponse<ProductoUnidadResponse> listarUnidades(
-            @PathVariable Long id, @PageableDefault(size = 20) Pageable pageable) {
-        return productoService.listarUnidades(id, pageable);
-    }
-
-    @PostMapping("/{id}/units")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ProductoUnidadResponse agregarUnidad(@PathVariable Long id,
-                                                @Valid @RequestBody ProductoUnidadRequest request) {
-        return productoService.agregarUnidad(id, request);
     }
 }

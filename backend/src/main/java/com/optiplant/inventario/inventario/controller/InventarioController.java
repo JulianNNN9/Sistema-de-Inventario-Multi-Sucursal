@@ -3,6 +3,7 @@ package com.optiplant.inventario.inventario.controller;
 import com.optiplant.inventario.inventario.dto.InventarioResponse;
 import com.optiplant.inventario.inventario.dto.MinStockRequest;
 import com.optiplant.inventario.inventario.service.InventarioService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Configuración de stock mínimo por producto y sucursal (RF-05). Restringido a
  * GERENTE_SUCURSAL y ADMIN_GENERAL (Sección 4.2).
  */
+@Tag(name = "Inventario", description = "Configuración de stock mínimo por producto y sucursal (Módulo 1).")
 @RestController
 @RequestMapping("/api/v1/inventory")
 @RequiredArgsConstructor

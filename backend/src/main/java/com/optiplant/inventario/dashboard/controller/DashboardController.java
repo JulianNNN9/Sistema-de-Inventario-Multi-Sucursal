@@ -6,6 +6,7 @@ import com.optiplant.inventario.dashboard.dto.InventoryRotationResponse;
 import com.optiplant.inventario.dashboard.dto.RestockAlert;
 import com.optiplant.inventario.dashboard.dto.SalesComparisonPoint;
 import com.optiplant.inventario.dashboard.service.DashboardService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,7 @@ import java.util.List;
  * {@code branchId} lo respeta solo ADMIN_GENERAL; el resto de roles siempre
  * ve su propia sucursal (Sección 4.2).
  */
+@Tag(name = "Dashboard", description = "Indicadores operativos: ventas, rotación, alertas y comparativas (Módulo 6).")
 @RestController
 @RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor

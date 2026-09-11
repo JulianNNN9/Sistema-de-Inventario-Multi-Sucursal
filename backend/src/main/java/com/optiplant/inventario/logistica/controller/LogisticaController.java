@@ -2,6 +2,7 @@ package com.optiplant.inventario.logistica.controller;
 
 import com.optiplant.inventario.logistica.dto.ComplianceReportResponse;
 import com.optiplant.inventario.logistica.service.LogisticaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import java.util.List;
  * (agregación acotada por nº de sucursales × transportistas, igual que el
  * Dashboard del Módulo 6).
  */
+@Tag(name = "Logística", description = "Reporte de cumplimiento de tiempos de entrega por ruta (Módulo 5).")
 @RestController
 @RequestMapping("/api/v1/logistics")
 @RequiredArgsConstructor

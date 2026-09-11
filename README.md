@@ -39,6 +39,10 @@ No se requiere configuración manual: `docker-compose.yml` incluye valores por d
 
 Desde esa cuenta se pueden crear el resto de usuarios (`GERENTE_SUCURSAL`, `OPERADOR_INVENTARIO`) y sucursales vía la sección de Administración de la aplicación.
 
+Además, el proyecto ya arranca con datos de prueba completos del dominio "ferretería" (4 sucursales, 9 usuarios, 28 productos, compras, ventas, transferencias en todos sus estados y sugerencias de rebalanceo reales) — ver la migración `V19__seed_ferreteria.sql` para el detalle completo y las credenciales de los otros 8 usuarios (contraseña uniforme `Test123!`).
+
+**Documentación interactiva de la API**: con el backend corriendo, Swagger UI queda disponible en `http://localhost:8080/swagger-ui.html` (usa el botón "Authorize" con el token de `POST /api/v1/auth/login`). El spec OpenAPI se sirve en vivo en `http://localhost:8080/v3/api-docs`.
+
 ## Estructura del repositorio
 
 ```
@@ -48,11 +52,16 @@ backend/
     common/            # DTOs y excepciones transversales (GlobalExceptionHandler, PageResponse, etc.)
     security/          # JWT, filtro de autenticación, CurrentUser
     config/            # Spring Security, Jackson
-  src/main/resources/db/migration/   # scripts Flyway versionados (V1..V16)
+  src/main/resources/db/migration/   # scripts Flyway versionados (V1..V19)
   src/test/java/...    # tests unitarios (JUnit 5 + Mockito), misma estructura por dominio
 frontend/
   src/{api,hooks,types,pages,components}/   # un archivo por dominio en cada carpeta
   src/components/ui/   # kit de componentes propio (Button, Card, DataTable, Modal, ...)
+docs/
+  api/openapi.json          # spec OpenAPI exportado (Módulo 9 · Fase A)
+  DATOS_DE_PRUEBA.md        # credenciales y detalle del seed de ferretería (Módulo 9 · Fase B)
+scripts/
+  export-openapi.sh         # regenera docs/api/openapi.json contra el backend real
 docker-compose.yml
 ```
 
@@ -71,6 +80,7 @@ Todos los módulos del alcance funcional están completos, con backend, tests y 
 | 6 | Dashboard de indicadores operativos (RF-26..RF-30) |
 | 7 | Recomendador de rebalanceo de inventario entre sucursales (RF-31..RF-34) |
 | 8 | Documentación y cierre |
+| 9 | Documentación OpenAPI (Swagger UI) y datos de prueba del dominio ferretería |
 
 ## Decisiones de diseño (resumen)
 
@@ -79,11 +89,12 @@ Todos los módulos del alcance funcional están completos, con backend, tests y 
 - **Rendimiento (RNF-01)**: todo endpoint de listado es paginado; los reportes de agregación (Dashboard, logística) se resuelven con `SUM`/`COUNT`/`AVG` a nivel de base de datos, nunca trayendo filas a la JVM para sumarlas en Java; relaciones que se listan junto a su entidad padre usan `@EntityGraph` para evitar N+1.
 - **Errores (RNF-04)**: un `GlobalExceptionHandler` único traduce cada excepción de negocio a un código HTTP y un mensaje específico (nunca genérico), con el mismo formato de error en toda la API.
 - **PostgreSQL y parámetros nulos**: los filtros opcionales en consultas JPQL usan el idioma `coalesce(:param, columna)` en vez de `:param IS NULL`, evitando un error real de inferencia de tipos de PostgreSQL con parámetros nulos aislados (detectado y corregido durante el desarrollo).
+- **Documentación de roles en OpenAPI (Módulo 9)**: un `OperationCustomizer` (`RoleDescriptionOperationCustomizer`) lee en tiempo real la anotación `@PreAuthorize` real de cada endpoint y la traduce a una descripción en español dentro del spec — la documentación de "qué rol puede usar este endpoint" nunca puede desincronizarse de la autorización efectiva, porque se genera a partir de ella.
 
 ## Tests
 
 ```bash
-cd backend && mvn test    # 109 tests (JUnit 5 + Mockito)
+cd backend && mvn test    # 107 tests (JUnit 5 + Mockito)
 cd frontend && npm test   # 4 tests (Vitest + Testing Library)
 ```
 

@@ -5,6 +5,7 @@ import com.optiplant.inventario.venta.dto.SaleRequest;
 import com.optiplant.inventario.venta.dto.SaleResponse;
 import com.optiplant.inventario.venta.dto.SaleSummaryResponse;
 import com.optiplant.inventario.venta.service.VentaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import java.time.LocalDate;
  * "Registrar ventas"); el comprobante y el histórico los consultan los tres
  * roles, acotados a la sucursal propia salvo ADMIN.
  */
+@Tag(name = "Ventas", description = "Registro de ventas y comprobantes (Módulo 3).")
 @RestController
 @RequestMapping("/api/v1/sales")
 @RequiredArgsConstructor

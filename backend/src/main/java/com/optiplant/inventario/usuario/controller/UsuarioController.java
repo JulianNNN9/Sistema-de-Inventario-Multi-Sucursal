@@ -5,6 +5,7 @@ import com.optiplant.inventario.usuario.dto.UsuarioRequest;
 import com.optiplant.inventario.usuario.dto.UsuarioResponse;
 import com.optiplant.inventario.usuario.dto.UsuarioUpdateRequest;
 import com.optiplant.inventario.usuario.service.UsuarioService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Administración de usuarios. Restringido a {@code ADMIN_GENERAL} (Sección 4.2).
  */
+@Tag(name = "Usuarios", description = "Administración de usuarios del sistema (Módulo 0).")
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor

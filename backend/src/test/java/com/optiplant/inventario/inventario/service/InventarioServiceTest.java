@@ -252,4 +252,48 @@ class InventarioServiceTest {
 
         assertEquals(0, inventario.getCostoPromedioPonderado().compareTo(new BigDecimal("106.67")));
     }
+
+    // --- registrarSalidaPorVenta (RF-13, RF-14) ----------------------------------
+
+    @Test
+    void salidaPorVenta_sinFilaDeInventario_lanzaStockInsuficiente() {
+        when(inventarioRepository.findByProductoIdAndSucursalId(10L, 1L)).thenReturn(java.util.Optional.empty());
+
+        assertThrows(StockInsuficienteException.class, () -> inventarioService.registrarSalidaPorVenta(
+                producto, sucursal, new BigDecimal("5"), 7L));
+        verify(movimientoRepository, never()).save(any());
+    }
+
+    @Test
+    void salidaPorVenta_stockInsuficiente_lanzaYNoPersiste() {
+        InventarioSucursal inventario = inventarioCon(new BigDecimal("3"), BigDecimal.ZERO);
+        when(inventarioRepository.findByProductoIdAndSucursalId(10L, 1L))
+                .thenReturn(java.util.Optional.of(inventario));
+
+        assertThrows(StockInsuficienteException.class, () -> inventarioService.registrarSalidaPorVenta(
+                producto, sucursal, new BigDecimal("5"), 7L));
+
+        assertEquals(0, inventario.getCantidadActual().compareTo(new BigDecimal("3")));
+        verify(movimientoRepository, never()).save(any());
+    }
+
+    @Test
+    void salidaPorVenta_ok_decrementaYRegistraMovimientoRetiroVenta() {
+        InventarioSucursal inventario = inventarioCon(new BigDecimal("10"), BigDecimal.ZERO);
+        when(inventarioRepository.findByProductoIdAndSucursalId(10L, 1L))
+                .thenReturn(java.util.Optional.of(inventario));
+        when(usuarioRepository.getReferenceById(7L)).thenReturn(Usuario.builder().id(7L).build());
+        when(inventarioRepository.save(any(InventarioSucursal.class))).thenAnswer(i -> i.getArgument(0));
+        when(movimientoRepository.save(any(MovimientoInventario.class))).thenAnswer(i -> i.getArgument(0));
+
+        inventarioService.registrarSalidaPorVenta(producto, sucursal, new BigDecimal("4"), 7L);
+
+        assertEquals(0, inventario.getCantidadActual().compareTo(new BigDecimal("6")));
+
+        ArgumentCaptor<MovimientoInventario> captor = ArgumentCaptor.forClass(MovimientoInventario.class);
+        verify(movimientoRepository).save(captor.capture());
+        assertEquals(TipoMovimiento.RETIRO, captor.getValue().getTipo());
+        assertEquals(MotivoMovimiento.VENTA, captor.getValue().getMotivo());
+        assertEquals(0, captor.getValue().getCantidad().compareTo(new BigDecimal("4")));
+    }
 }

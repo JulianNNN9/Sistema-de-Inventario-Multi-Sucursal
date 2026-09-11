@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  ArrowLeftRight,
   Boxes,
   LayoutDashboard,
   LogOut,
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/inventory', label: 'Inventario', icon: Warehouse },
   { to: '/purchases', label: 'Compras', icon: ShoppingCart },
   { to: '/sales', label: 'Ventas', icon: Receipt },
+  { to: '/transfers', label: 'Transferencias', icon: ArrowLeftRight },
   { to: '/admin', label: 'Administración', icon: ShieldCheck, roles: ['ADMIN_GENERAL'] },
 ];
 

@@ -1,12 +1,13 @@
 const numberFormatter = new Intl.NumberFormat('es-CO', {
-  minimumFractionDigits: 2,
+  minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
 
 const currencyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
   currency: 'COP',
-  minimumFractionDigits: 2,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 export function formatNumber(value: number): string {

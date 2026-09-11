@@ -158,6 +158,57 @@ public class InventarioService {
                 .build());
     }
 
+    /**
+     * Aplica la salida de stock en la sucursal origen al despachar una
+     * transferencia (RF-18, RF-19). Sin fila de inventario o stock insuficiente
+     * lanza {@link StockInsuficienteException}.
+     */
+    @Transactional
+    public void registrarSalidaPorTransferencia(Producto producto, Sucursal sucursalOrigen,
+                                                BigDecimal cantidad, Long responsableId) {
+        InventarioSucursal inventario = inventarioRepository
+                .findByProductoIdAndSucursalId(producto.getId(), sucursalOrigen.getId())
+                .orElseThrow(StockInsuficienteException::new);
+        if (inventario.getCantidadActual().compareTo(cantidad) < 0) {
+            throw new StockInsuficienteException();
+        }
+        inventario.setCantidadActual(inventario.getCantidadActual().subtract(cantidad));
+        inventarioRepository.save(inventario);
+
+        movimientoRepository.save(MovimientoInventario.builder()
+                .inventario(inventario)
+                .tipo(TipoMovimiento.RETIRO)
+                .motivo(MotivoMovimiento.TRANSFERENCIA_SALIDA)
+                .cantidad(cantidad)
+                .fecha(Instant.now())
+                .responsable(usuarioRepository.getReferenceById(responsableId))
+                .build());
+    }
+
+    /**
+     * Aplica el ingreso de stock en la sucursal destino al confirmar la
+     * recepción (total o parcial) de una transferencia (RF-20, RF-21). No
+     * recalcula {@code costo_promedio_ponderado}: RF-12 lo limita explícitamente
+     * a las recepciones de compra (Módulo 2); una transferencia mueve stock ya
+     * valorado, no genera una nueva compra.
+     */
+    @Transactional
+    public void registrarIngresoPorTransferencia(Producto producto, Sucursal sucursalDestino,
+                                                 BigDecimal cantidad, Long responsableId) {
+        InventarioSucursal inventario = getOrCreateInventario(producto, sucursalDestino);
+        inventario.setCantidadActual(inventario.getCantidadActual().add(cantidad));
+        inventarioRepository.save(inventario);
+
+        movimientoRepository.save(MovimientoInventario.builder()
+                .inventario(inventario)
+                .tipo(TipoMovimiento.INGRESO)
+                .motivo(MotivoMovimiento.TRANSFERENCIA_ENTRADA)
+                .cantidad(cantidad)
+                .fecha(Instant.now())
+                .responsable(usuarioRepository.getReferenceById(responsableId))
+                .build());
+    }
+
     @Transactional(readOnly = true)
     public PageResponse<InventarioResponse> listarInventarioSucursal(Long branchId, Pageable pageable) {
         sucursalService.getEntityById(branchId);

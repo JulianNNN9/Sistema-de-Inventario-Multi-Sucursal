@@ -8,6 +8,7 @@ import { InventarioPage } from './pages/InventarioPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotAuthorizedPage } from './pages/NotAuthorizedPage';
 import { ProductosPage } from './pages/ProductosPage';
+import { VentasPage } from './pages/VentasPage';
 import { PrivateRoute } from './routes/PrivateRoute';
 import { RoleGuard } from './routes/RoleGuard';
 
@@ -25,6 +26,7 @@ export default function App() {
               <Route path="products" element={<ProductosPage />} />
               <Route path="inventory" element={<InventarioPage />} />
               <Route path="purchases" element={<ComprasPage />} />
+              <Route path="sales" element={<VentasPage />} />
               <Route element={<RoleGuard allow={['ADMIN_GENERAL']} />}>
                 <Route path="admin" element={<AdminPage />} />
               </Route>

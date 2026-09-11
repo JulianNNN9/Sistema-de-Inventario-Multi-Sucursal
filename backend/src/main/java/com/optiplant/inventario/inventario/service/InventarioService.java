@@ -129,6 +129,35 @@ public class InventarioService {
                 .build());
     }
 
+    /**
+     * Aplica la salida de stock de una línea de venta (RF-13, RF-14): valida que
+     * exista existencia suficiente, decrementa {@code cantidad_actual} y registra
+     * el {@code MovimientoInventario} (RETIRO / VENTA). Sin fila de inventario o
+     * con stock insuficiente lanza {@link StockInsuficienteException} — al ir
+     * dentro de la transacción de {@code VentaService.crear}, revierte todo (RN-01).
+     */
+    @Transactional
+    public void registrarSalidaPorVenta(Producto producto, Sucursal sucursal,
+                                        BigDecimal cantidad, Long responsableId) {
+        InventarioSucursal inventario = inventarioRepository
+                .findByProductoIdAndSucursalId(producto.getId(), sucursal.getId())
+                .orElseThrow(StockInsuficienteException::new);
+        if (inventario.getCantidadActual().compareTo(cantidad) < 0) {
+            throw new StockInsuficienteException();
+        }
+        inventario.setCantidadActual(inventario.getCantidadActual().subtract(cantidad));
+        inventarioRepository.save(inventario);
+
+        movimientoRepository.save(MovimientoInventario.builder()
+                .inventario(inventario)
+                .tipo(TipoMovimiento.RETIRO)
+                .motivo(MotivoMovimiento.VENTA)
+                .cantidad(cantidad)
+                .fecha(Instant.now())
+                .responsable(usuarioRepository.getReferenceById(responsableId))
+                .build());
+    }
+
     @Transactional(readOnly = true)
     public PageResponse<InventarioResponse> listarInventarioSucursal(Long branchId, Pageable pageable) {
         sucursalService.getEntityById(branchId);

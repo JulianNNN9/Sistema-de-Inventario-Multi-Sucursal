@@ -1,5 +1,6 @@
 package com.optiplant.inventario.transferencia.repository;
 
+import com.optiplant.inventario.dashboard.dto.ActiveTransfersCount;
 import com.optiplant.inventario.logistica.dto.ComplianceReportRow;
 import com.optiplant.inventario.transferencia.entity.EstadoTransferencia;
 import com.optiplant.inventario.transferencia.entity.Transferencia;
@@ -75,4 +76,19 @@ public interface TransferenciaRepository extends JpaRepository<Transferencia, Lo
             order by t.sucursal_origen_id, t.transportista
             """, nativeQuery = true)
     List<ComplianceReportRow> complianceReport(@Param("branchId") Long branchId, @Param("route") String route);
+
+    /**
+     * RF-28 (Dashboard, Módulo 6): conteo por estado no terminal, agregado en
+     * BD (RNF-01). {@code estadosActivos} lo fija el Service (los 4 estados no
+     * terminales del modelo, Sección 3), no es un filtro libre del cliente.
+     */
+    @Query("""
+            select new com.optiplant.inventario.dashboard.dto.ActiveTransfersCount(t.estado, count(t))
+            from Transferencia t
+            where t.estado in :estadosActivos
+              and (:branchId is null or t.sucursalOrigen.id = :branchId or t.sucursalDestino.id = :branchId)
+            group by t.estado
+            """)
+    List<ActiveTransfersCount> countActivasPorEstado(@Param("estadosActivos") List<EstadoTransferencia> estadosActivos,
+                                                     @Param("branchId") Long branchId);
 }

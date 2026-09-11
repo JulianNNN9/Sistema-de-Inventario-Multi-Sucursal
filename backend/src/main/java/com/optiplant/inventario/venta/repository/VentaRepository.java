@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -36,4 +37,16 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
                        @Param("from") Instant from,
                        @Param("to") Instant to,
                        Pageable pageable);
+
+    /** Suma agregada en BD (RNF-01) para un rango; usada por el Dashboard (RF-26). */
+    @Query("""
+            select coalesce(sum(v.total), 0)
+            from Venta v
+            where (:branchId is null or v.sucursal.id = :branchId)
+              and v.fecha >= :from
+              and v.fecha < :to
+            """)
+    BigDecimal sumTotalEntreFechas(@Param("branchId") Long branchId,
+                                   @Param("from") Instant from,
+                                   @Param("to") Instant to);
 }

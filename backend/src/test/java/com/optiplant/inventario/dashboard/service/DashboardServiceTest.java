@@ -162,7 +162,7 @@ class DashboardServiceTest {
     void activeTransfers_filtraExactamenteLosCuatroEstadosNoTerminales() {
         when(currentUser.isAdmin()).thenReturn(false);
         when(currentUser.sucursalId()).thenReturn(1L);
-        ArgumentCaptor<List<EstadoTransferencia>> estadosCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<EstadoTransferencia>> estadosCaptor = ArgumentCaptor.captor();
         when(transferenciaRepository.countActivasPorEstado(estadosCaptor.capture(), eq(1L))).thenReturn(List.of());
 
         dashboardService.activeTransfers(null);

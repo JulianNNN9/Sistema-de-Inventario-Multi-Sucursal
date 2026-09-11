@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,4 +37,19 @@ public interface InventarioSucursalRepository extends JpaRepository<InventarioSu
             order by inv.sucursal.nombre, inv.producto.nombre
             """)
     List<InventarioSucursal> restockAlerts(@Param("branchId") Long branchId);
+
+    /**
+     * RF-31 (Módulo 7): única prefiltración que se delega a BD — reduce el
+     * conjunto a las filas realmente candidatas (déficit o superávit); el
+     * emparejamiento en sí es un algoritmo (Strategy), no una agregación SQL,
+     * así que no aplica la prohibición de RNF-01 sobre sumar en Java.
+     */
+    @EntityGraph(attributePaths = {"producto", "sucursal"})
+    @Query("""
+            select inv from InventarioSucursal inv
+            where inv.cantidadActual < inv.stockMinimo
+               or inv.cantidadActual > inv.stockMinimo * :umbralSuperavit
+            order by inv.producto.id, inv.sucursal.id
+            """)
+    List<InventarioSucursal> findCandidatosRebalanceo(@Param("umbralSuperavit") BigDecimal umbralSuperavit);
 }

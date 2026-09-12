@@ -85,7 +85,9 @@ const URGENCIA_TONE: Record<Urgencia, 'neutral' | 'danger' | 'info'> = {
 export function TransferenciasPage() {
   const { rol, sucursalId } = useAuth();
   const isAdmin = rol === 'ADMIN_GENERAL';
-  const puedeSolicitar = rol === 'ADMIN_GENERAL' || rol === 'OPERADOR_INVENTARIO';
+  // Solicitar/aprobar/resolver: decisión de la sucursal (ADMIN + GERENTE).
+  // Despachar/recibir: ejecución física, abierta a los tres roles.
+  const puedeSolicitar = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL';
 
   const { branches } = useBranches();
 
@@ -113,16 +115,20 @@ export function TransferenciasPage() {
   const { showSuccess, showError } = useToast();
 
   function canApprove(t: Transfer) {
-    return rol === 'GERENTE_SUCURSAL' && sucursalId === t.sucursalOrigenId && t.estado === 'PENDIENTE';
+    if (t.estado !== 'PENDIENTE') return false;
+    return isAdmin || (rol === 'GERENTE_SUCURSAL' && sucursalId === t.sucursalOrigenId);
   }
   function canDispatch(t: Transfer) {
-    return rol === 'OPERADOR_INVENTARIO' && sucursalId === t.sucursalOrigenId && t.estado === 'PENDIENTE';
+    if (t.estado !== 'PENDIENTE') return false;
+    return isAdmin || sucursalId === t.sucursalOrigenId;
   }
   function canReceive(t: Transfer) {
-    return rol === 'OPERADOR_INVENTARIO' && sucursalId === t.sucursalDestinoId && t.estado === 'EN_TRANSITO';
+    if (t.estado !== 'EN_TRANSITO') return false;
+    return isAdmin || sucursalId === t.sucursalDestinoId;
   }
   function canResolve(t: Transfer) {
-    return rol === 'GERENTE_SUCURSAL' && sucursalId === t.sucursalDestinoId && t.estado === 'CON_FALTANTES';
+    if (t.estado !== 'CON_FALTANTES') return false;
+    return isAdmin || (rol === 'GERENTE_SUCURSAL' && sucursalId === t.sucursalDestinoId);
   }
 
   async function handleApproveConfirm() {

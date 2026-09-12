@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -54,12 +55,19 @@ function formatPeriodo(periodo: string): string {
 export function DashboardPage() {
   const { usuario, rol } = useAuth();
   const isAdmin = rol === 'ADMIN_GENERAL';
+  // OPERADOR_INVENTARIO no tiene panel de indicadores: es un rol de ejecución
+  // operativa, no de análisis. Solo ADMIN_GENERAL/GERENTE_SUCURSAL ven el Panel.
+  const isOperador = rol === 'OPERADOR_INVENTARIO';
   const { branches } = useBranches();
 
   const [filterBranch, setFilterBranch] = useState('');
   const branchId = filterBranch ? Number(filterBranch) : undefined;
 
-  const { data, loading, error, refetch } = useDashboard({ branchId, includeBranchComparison: isAdmin });
+  const { data, loading, error, refetch } = useDashboard({
+    branchId,
+    includeBranchComparison: isAdmin,
+    enabled: !isOperador,
+  });
 
   const chartData = useMemo(
     () =>
@@ -69,6 +77,10 @@ export function DashboardPage() {
       })),
     [data?.sales],
   );
+
+  if (isOperador) {
+    return <Navigate to="/inventory" replace />;
+  }
 
   return (
     <div className="space-y-6">

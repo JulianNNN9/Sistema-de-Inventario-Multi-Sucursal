@@ -19,8 +19,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Listas de precios (RF-15). El alta forma parte del flujo de ventas
- * (ADMIN / OPERADOR); la consulta la hacen los tres roles.
+ * Listas de precios (RF-15). Es una decisión de política comercial de la
+ * sucursal, no una tarea de ejecución día a día: el alta la hace ADMIN_GENERAL
+ * o GERENTE_SUCURSAL; OPERADOR_INVENTARIO solo las usa al registrar una venta
+ * (ver RESPONSABILIDADES_ROLES.md, Sección 4). La consulta la hacen los tres roles.
  */
 @Tag(name = "Listas de precios", description = "Listas de precios globales o por sucursal (Módulo 3).")
 @RestController
@@ -32,7 +34,7 @@ public class ListaPrecioController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','OPERADOR_INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
     public PriceListResponse crear(@Valid @RequestBody PriceListRequest request) {
         return listaPrecioService.crear(request);
     }

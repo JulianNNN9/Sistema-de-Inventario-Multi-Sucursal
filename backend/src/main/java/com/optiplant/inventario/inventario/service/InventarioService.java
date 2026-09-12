@@ -209,8 +209,15 @@ public class InventarioService {
                 .build());
     }
 
+    /**
+     * Solo ADMIN_GENERAL puede consultar el inventario de una sucursal distinta
+     * a la propia; GERENTE_SUCURSAL y OPERADOR_INVENTARIO están acotados a su
+     * propia sucursal (a diferencia del resto de módulos de solo lectura, aquí
+     * no hay visibilidad de red para esos dos roles).
+     */
     @Transactional(readOnly = true)
     public PageResponse<InventarioResponse> listarInventarioSucursal(Long branchId, Pageable pageable) {
+        currentUser.assertPuedeOperarSobreSucursal(branchId);
         sucursalService.getEntityById(branchId);
         return PageResponse.from(
                 inventarioRepository.findBySucursalId(branchId, pageable).map(this::toResponse));

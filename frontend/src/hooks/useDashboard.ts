@@ -26,10 +26,11 @@ export interface DashboardData {
 interface Options {
   branchId?: number;
   includeBranchComparison: boolean;
+  enabled?: boolean;
 }
 
 /** Trae los 5 indicadores del panel en paralelo (RF-26..RF-30). */
-export function useDashboard({ branchId, includeBranchComparison }: Options) {
+export function useDashboard({ branchId, includeBranchComparison, enabled = true }: Options) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +39,10 @@ export function useDashboard({ branchId, includeBranchComparison }: Options) {
   const refetch = useCallback(() => setReloadTick((t) => t + 1), []);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     setLoading(true);
     Promise.all([
@@ -62,7 +67,7 @@ export function useDashboard({ branchId, includeBranchComparison }: Options) {
     return () => {
       active = false;
     };
-  }, [branchId, includeBranchComparison, reloadTick]);
+  }, [branchId, includeBranchComparison, enabled, reloadTick]);
 
   return { data, loading, error, refetch };
 }

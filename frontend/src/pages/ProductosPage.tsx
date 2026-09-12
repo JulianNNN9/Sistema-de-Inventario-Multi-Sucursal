@@ -13,6 +13,7 @@ import {
 } from '../components/ui';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { createProduct, deleteProduct, updateProduct } from '../api/productos';
+import { useAuth } from '../hooks/useAuth';
 import { useProductos } from '../hooks/useProductos';
 import { useMutation } from '../hooks/useMutation';
 import { useToast } from '../context/ToastContext';
@@ -21,6 +22,11 @@ import type { Producto } from '../types/producto';
 const PAGE_SIZE = 20;
 
 export function ProductosPage() {
+  const { rol } = useAuth();
+  // El catálogo es un dato maestro: lo mantiene ADMIN_GENERAL/GERENTE_SUCURSAL.
+  // OPERADOR_INVENTARIO es de solo lectura aquí.
+  const canManage = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL';
+
   const [page, setPage] = useState(0);
   const { data, loading, error, refetch } = useProductos({ page, size: PAGE_SIZE });
   const { showSuccess, showError } = useToast();
@@ -96,18 +102,19 @@ export function ProductosPage() {
       key: 'acciones',
       header: '',
       align: 'right',
-      render: (p) => (
-        <div className="flex justify-end gap-1">
-          <Button size="sm" variant="ghost" onClick={() => openEdit(p)} aria-label={`Editar ${p.nombre}`}>
-            <Pencil className="h-4 w-4" aria-hidden />
-            Editar
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(p)} aria-label={`Eliminar ${p.nombre}`}>
-            <Trash2 className="h-4 w-4 text-rose-500" aria-hidden />
-            Eliminar
-          </Button>
-        </div>
-      ),
+      render: (p) =>
+        canManage ? (
+          <div className="flex justify-end gap-1">
+            <Button size="sm" variant="ghost" onClick={() => openEdit(p)} aria-label={`Editar ${p.nombre}`}>
+              <Pencil className="h-4 w-4" aria-hidden />
+              Editar
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(p)} aria-label={`Eliminar ${p.nombre}`}>
+              <Trash2 className="h-4 w-4 text-rose-500" aria-hidden />
+              Eliminar
+            </Button>
+          </div>
+        ) : null,
     },
   ];
 
@@ -117,10 +124,12 @@ export function ProductosPage() {
         title="Productos"
         description="Catálogo de productos de la sucursal."
         actions={
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4" aria-hidden />
-            Nuevo producto
-          </Button>
+          canManage ? (
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" aria-hidden />
+              Nuevo producto
+            </Button>
+          ) : undefined
         }
       />
 
@@ -135,12 +144,18 @@ export function ProductosPage() {
           <EmptyState
             icon={Package}
             title="Sin productos"
-            description="Crea el primer producto del catálogo para empezar a registrar inventario."
+            description={
+              canManage
+                ? 'Crea el primer producto del catálogo para empezar a registrar inventario.'
+                : 'Aún no hay productos en el catálogo.'
+            }
             action={
-              <Button onClick={openCreate}>
-                <Plus className="h-4 w-4" aria-hidden />
-                Nuevo producto
-              </Button>
+              canManage ? (
+                <Button onClick={openCreate}>
+                  <Plus className="h-4 w-4" aria-hidden />
+                  Nuevo producto
+                </Button>
+              ) : undefined
             }
           />
         }

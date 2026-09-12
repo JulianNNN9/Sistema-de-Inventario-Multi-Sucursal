@@ -35,7 +35,10 @@ function net(cantidad: number, precio: number, descuento: number): number {
 export function VentasPage() {
   const { rol } = useAuth();
   const isAdmin = rol === 'ADMIN_GENERAL';
-  const canManage = rol === 'ADMIN_GENERAL' || rol === 'OPERADOR_INVENTARIO';
+  // Registrar venta: disponible para los tres roles.
+  const canManage = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL' || rol === 'OPERADOR_INVENTARIO';
+  // Listas de precios: política comercial de la sucursal (ADMIN + GERENTE), no del Operador.
+  const canManagePriceLists = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL';
 
   const { branches } = useBranches();
   const { priceLists, refetch: refetchPriceLists } = usePriceLists();
@@ -83,16 +86,20 @@ export function VentasPage() {
         title="Ventas"
         description="Registro de ventas, comprobantes e histórico."
         actions={
-          canManage ? (
+          canManage || canManagePriceLists ? (
             <>
-              <Button variant="secondary" onClick={() => setPriceListsOpen(true)}>
-                <Tags className="h-4 w-4" aria-hidden />
-                Listas de precios
-              </Button>
-              <Button onClick={() => setSaleOpen(true)}>
-                <Plus className="h-4 w-4" aria-hidden />
-                Nueva venta
-              </Button>
+              {canManagePriceLists && (
+                <Button variant="secondary" onClick={() => setPriceListsOpen(true)}>
+                  <Tags className="h-4 w-4" aria-hidden />
+                  Listas de precios
+                </Button>
+              )}
+              {canManage && (
+                <Button onClick={() => setSaleOpen(true)}>
+                  <Plus className="h-4 w-4" aria-hidden />
+                  Nueva venta
+                </Button>
+              )}
             </>
           ) : undefined
         }

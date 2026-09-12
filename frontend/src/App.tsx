@@ -32,8 +32,10 @@ export default function App() {
                 <Route path="purchases" element={<ComprasPage />} />
                 <Route path="sales" element={<VentasPage />} />
                 <Route path="transfers" element={<TransferenciasPage />} />
-                <Route element={<RoleGuard allow={['ADMIN_GENERAL']} />}>
+                <Route element={<RoleGuard allow={['ADMIN_GENERAL', 'GERENTE_SUCURSAL']} />}>
                   <Route path="logistics" element={<LogisticaPage />} />
+                </Route>
+                <Route element={<RoleGuard allow={['ADMIN_GENERAL']} />}>
                   <Route path="admin" element={<AdminPage />} />
                 </Route>
               </Route>

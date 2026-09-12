@@ -91,6 +91,17 @@ public class CompraService {
     }
 
     /**
+     * Worklist de OPERADOR_INVENTARIO: solo las órdenes PENDIENTES de su propia
+     * sucursal, para saber qué confirmar. No es el histórico (sin filtros por
+     * proveedor/producto, sin otros estados).
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<PurchaseOrderSummaryResponse> listarPendientesPropios(Pageable pageable) {
+        return PageResponse.from(ordenCompraRepository.findPendingByBranch(
+                currentUser.sucursalId(), EstadoOrdenCompra.PENDIENTE, pageable));
+    }
+
+    /**
      * Facade — RF-10 / RF-12. Por cada línea: ingreso de stock + recálculo del
      * costo promedio ponderado + movimiento de inventario; luego la orden pasa a
      * RECIBIDA. Todo en la misma transacción.

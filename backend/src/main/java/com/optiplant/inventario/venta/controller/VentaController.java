@@ -25,9 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 /**
- * Ventas (RF-13..RF-16). El registro es de ADMIN / OPERADOR (Sección 4.2:
- * "Registrar ventas"); el comprobante y el histórico los consultan los tres
- * roles, acotados a la sucursal propia salvo ADMIN.
+ * Ventas (RF-13..RF-16). El registro y la consulta (comprobante e histórico)
+ * están disponibles para los tres roles, acotados a la sucursal propia salvo
+ * ADMIN.
  */
 @Tag(name = "Ventas", description = "Registro de ventas y comprobantes (Módulo 3).")
 @RestController
@@ -39,7 +39,7 @@ public class VentaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','OPERADOR_INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public SaleResponse crear(@Valid @RequestBody SaleRequest request) {
         return ventaService.crear(request);
     }

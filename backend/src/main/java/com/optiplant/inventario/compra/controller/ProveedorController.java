@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Proveedores (RF-08). Dato maestro: la creación y la edición son exclusivas
- * de ADMIN_GENERAL; el listado lo consultan los tres roles, entre otros para
- * el histórico de compras por proveedor (HU-06).
+ * Proveedores (RF-08). Dato maestro: el alta y la edición son exclusivas de
+ * ADMIN_GENERAL; el listado lo consultan los tres roles, entre otros para el
+ * histórico de compras por proveedor (HU-06).
  */
 @Tag(name = "Proveedores", description = "Creación, edición y listado de proveedores (Módulo 2).")
 @RestController

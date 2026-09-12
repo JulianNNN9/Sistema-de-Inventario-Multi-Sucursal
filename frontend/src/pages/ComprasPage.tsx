@@ -509,7 +509,7 @@ function PurchaseOrderModal({ open, isAdmin, onClose, onCreated }: PurchaseOrder
               <Input
                 type="number"
                 step="0.01"
-                min="0"
+                min="1"
                 placeholder="Cant."
                 className="sm:w-24"
                 value={linea.cantidad}

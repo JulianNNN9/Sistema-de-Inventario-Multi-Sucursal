@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Reglas de negocio de sucursales (Fase 0.D). El alta de una sucursal es el
- * único punto por el que se incorpora un nodo nuevo a la red (RNF-03).
+ * Reglas de negocio de sucursales (Fase 0.D). La creación de una sucursal es
+ * el único punto por el que se incorpora un nodo nuevo a la red (RNF-03).
  */
 @Service
 @RequiredArgsConstructor

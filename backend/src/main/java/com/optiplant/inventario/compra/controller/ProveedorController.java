@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * ADMIN_GENERAL; el listado lo consultan los tres roles, entre otros para el
  * histórico de compras por proveedor (HU-06).
  */
-@Tag(name = "Proveedores", description = "Alta, edición y listado de proveedores (Módulo 2).")
+@Tag(name = "Proveedores", description = "Creación, edición y listado de proveedores (Módulo 2).")
 @RestController
 @RequestMapping("/api/v1/suppliers")
 @RequiredArgsConstructor

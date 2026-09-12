@@ -24,7 +24,12 @@ services:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/optiplant}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-optiplant}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-optiplant_dev_pw}
-      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me_0123456789_abcdefghij}
+      # RNF-02: sin valor por defecto a propósito. Si no se define en .env,
+      # docker-entrypoint.sh genera uno con `openssl rand` en el primer
+      # arranque y lo persiste en el volumen `jwt_secret` (ver README).
+      JWT_SECRET: ${JWT_SECRET:-}
+    volumes:
+      - jwt_secret:/secrets
     ports:
       - "8080:8080"
     depends_on:
@@ -55,3 +60,4 @@ services:
 
 volumes:
   pgdata:
+  jwt_secret:

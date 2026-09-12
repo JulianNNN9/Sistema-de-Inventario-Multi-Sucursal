@@ -516,11 +516,11 @@ WHERE t.producto_id = (SELECT id FROM producto WHERE sku = 'PIN-0002') AND t.can
 
 -- 9.3 EN_TRANSITO — aprobada y despachada, aún no llega.
 INSERT INTO transferencia (producto_id, sucursal_origen_id, sucursal_destino_id, cantidad_solicitada,
-                            cantidad_enviada, estado, urgencia, transportista, fecha_estimada_llegada)
+                            cantidad_enviada, costo, estado, urgencia, transportista, fecha_estimada_llegada)
 VALUES ((SELECT id FROM producto WHERE sku = 'TOR-0003'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Central'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Sur'),
-        50, 50, 'EN_TRANSITO', 'MEDIA', 'Transportes Rápidos S.A.S.', now() + interval '2 days');
+        50, 50, 85000, 'EN_TRANSITO', 'MEDIA', 'Transportes Rápidos S.A.S.', now() + interval '2 days');
 INSERT INTO transferencia_evento (transferencia_id, estado, fecha, comentario)
 SELECT t.id, 'PENDIENTE', now() - interval '4 days', 'Solicitud creada'
 FROM transferencia t WHERE t.producto_id = (SELECT id FROM producto WHERE sku = 'TOR-0003') AND t.cantidad_solicitada = 50;
@@ -534,12 +534,12 @@ FROM transferencia t WHERE t.producto_id = (SELECT id FROM producto WHERE sku = 
 
 -- 9.4 COMPLETADA — ciclo completo, se recibió todo lo enviado.
 INSERT INTO transferencia (producto_id, sucursal_origen_id, sucursal_destino_id, cantidad_solicitada,
-                            cantidad_enviada, cantidad_recibida, estado, urgencia, transportista,
+                            cantidad_enviada, cantidad_recibida, costo, estado, urgencia, transportista,
                             fecha_estimada_llegada, fecha_real_llegada)
 VALUES ((SELECT id FROM producto WHERE sku = 'ELE-0003'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Norte'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Zona Industrial'),
-        20, 20, 20, 'COMPLETADA', 'BAJA', 'Coordinadora Mercantil',
+        20, 20, 20, 120000, 'COMPLETADA', 'BAJA', 'Coordinadora Mercantil',
         now() - interval '5 days', now() - interval '4 days');
 INSERT INTO transferencia_evento (transferencia_id, estado, fecha, comentario)
 SELECT t.id, 'PENDIENTE', now() - interval '12 days', 'Solicitud creada'
@@ -557,12 +557,12 @@ FROM transferencia t WHERE t.producto_id = (SELECT id FROM producto WHERE sku = 
 
 -- 9.5 CON_FALTANTES — llegó menos de lo enviado.
 INSERT INTO transferencia (producto_id, sucursal_origen_id, sucursal_destino_id, cantidad_solicitada,
-                            cantidad_enviada, cantidad_recibida, estado, urgencia, transportista,
+                            cantidad_enviada, cantidad_recibida, costo, estado, urgencia, transportista,
                             fecha_estimada_llegada, fecha_real_llegada)
 VALUES ((SELECT id FROM producto WHERE sku = 'HER-0004'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Central'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Norte'),
-        30, 30, 22, 'CON_FALTANTES', 'MEDIA', 'Envía',
+        30, 30, 22, 95000, 'CON_FALTANTES', 'MEDIA', 'Envía',
         now() - interval '8 days', now() - interval '7 days');
 INSERT INTO transferencia_evento (transferencia_id, estado, fecha, comentario)
 SELECT t.id, 'PENDIENTE', now() - interval '15 days', 'Solicitud creada'
@@ -580,12 +580,12 @@ FROM transferencia t WHERE t.producto_id = (SELECT id FROM producto WHERE sku = 
 
 -- 9.6 CERRADA_AJUSTE — el faltante se cierra asumiendo la pérdida.
 INSERT INTO transferencia (producto_id, sucursal_origen_id, sucursal_destino_id, cantidad_solicitada,
-                            cantidad_enviada, cantidad_recibida, estado, urgencia, transportista,
+                            cantidad_enviada, cantidad_recibida, costo, estado, urgencia, transportista,
                             fecha_estimada_llegada, fecha_real_llegada)
 VALUES ((SELECT id FROM producto WHERE sku = 'SEG-0002'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Zona Industrial'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Sur'),
-        15, 15, 10, 'CERRADA_AJUSTE', 'BAJA', 'Servientrega',
+        15, 15, 10, 60000, 'CERRADA_AJUSTE', 'BAJA', 'Servientrega',
         now() - interval '20 days', now() - interval '19 days');
 INSERT INTO transferencia_evento (transferencia_id, estado, fecha, comentario)
 SELECT t.id, 'PENDIENTE', now() - interval '30 days', 'Solicitud creada'
@@ -606,12 +606,12 @@ FROM transferencia t WHERE t.producto_id = (SELECT id FROM producto WHERE sku = 
 
 -- 9.7 CERRADA_RECLAMACION — el faltante se cierra con reclamación formal.
 INSERT INTO transferencia (producto_id, sucursal_origen_id, sucursal_destino_id, cantidad_solicitada,
-                            cantidad_enviada, cantidad_recibida, estado, urgencia, transportista,
+                            cantidad_enviada, cantidad_recibida, costo, estado, urgencia, transportista,
                             fecha_estimada_llegada, fecha_real_llegada)
 VALUES ((SELECT id FROM producto WHERE sku = 'ELE-HTA-0004'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Sur'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Central'),
-        6, 6, 4, 'CERRADA_RECLAMACION', 'ALTA', 'Transportes Rápidos S.A.S.',
+        6, 6, 4, 150000, 'CERRADA_RECLAMACION', 'ALTA', 'Transportes Rápidos S.A.S.',
         now() - interval '25 days', now() - interval '24 days');
 INSERT INTO transferencia_evento (transferencia_id, estado, fecha, comentario)
 SELECT t.id, 'PENDIENTE', now() - interval '35 days', 'Solicitud creada'
@@ -634,12 +634,12 @@ FROM transferencia t WHERE t.producto_id = (SELECT id FROM producto WHERE sku = 
 --     queda registrado como una nueva transferencia PENDIENTE independiente
 --     (mismo mecanismo que TransferenciaService.resolver, tratamiento REENVIO).
 INSERT INTO transferencia (producto_id, sucursal_origen_id, sucursal_destino_id, cantidad_solicitada,
-                            cantidad_enviada, cantidad_recibida, estado, urgencia, transportista,
+                            cantidad_enviada, cantidad_recibida, costo, estado, urgencia, transportista,
                             fecha_estimada_llegada, fecha_real_llegada)
 VALUES ((SELECT id FROM producto WHERE sku = 'PLO-0003'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Norte'),
         (SELECT id FROM sucursal WHERE nombre = 'Ferretería Sur'),
-        40, 40, 28, 'REENVIO_SOLICITADO', 'MEDIA', 'Coordinadora Mercantil',
+        40, 40, 28, 70000, 'REENVIO_SOLICITADO', 'MEDIA', 'Coordinadora Mercantil',
         now() - interval '10 days', now() - interval '9 days');
 INSERT INTO transferencia_evento (transferencia_id, estado, fecha, comentario)
 SELECT t.id, 'PENDIENTE', now() - interval '18 days', 'Solicitud creada'

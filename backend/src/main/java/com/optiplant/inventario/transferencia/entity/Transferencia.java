@@ -61,6 +61,14 @@ public class Transferencia {
     @Column(name = "cantidad_recibida", precision = 12, scale = 2)
     private BigDecimal cantidadRecibida;
 
+    /**
+     * Costo real del envío (RF-23), capturado en el despacho ({@code DispatchRequest});
+     * en la solicitud aún no se conoce, por eso el default 0 hasta que se despache.
+     */
+    @Builder.Default
+    @Column(name = "costo", nullable = false, precision = 12, scale = 2)
+    private BigDecimal costo = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private EstadoTransferencia estado;

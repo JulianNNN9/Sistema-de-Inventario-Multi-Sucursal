@@ -171,7 +171,7 @@ class TransferenciaServiceTest {
         when(transferenciaRepository.findById(99L)).thenReturn(Optional.of(transferenciaEn(EstadoTransferencia.PENDIENTE)));
         when(transferenciaEventoRepository.existsByTransferenciaIdAndComentario(eq(99L), any())).thenReturn(false);
 
-        DispatchRequest request = new DispatchRequest(new BigDecimal("15"), "Transportes", Instant.now());
+        DispatchRequest request = new DispatchRequest(new BigDecimal("15"), "Transportes", Instant.now(), new BigDecimal("50000"));
 
         assertThrows(TransferenciaInvalidaException.class, () -> transferenciaService.despachar(99L, request));
         verify(inventarioService, never()).registrarSalidaPorTransferencia(any(), any(), any(), any());
@@ -184,12 +184,14 @@ class TransferenciaServiceTest {
         when(currentUser.usuarioId()).thenReturn(7L);
         when(transferenciaRepository.save(any(Transferencia.class))).thenAnswer(i -> i.getArgument(0));
 
-        DispatchRequest request = new DispatchRequest(new BigDecimal("15"), "Transportes XYZ", Instant.parse("2026-09-20T00:00:00Z"));
+        DispatchRequest request = new DispatchRequest(
+                new BigDecimal("15"), "Transportes XYZ", Instant.parse("2026-09-20T00:00:00Z"), new BigDecimal("85000"));
         TransferResponse response = transferenciaService.despachar(99L, request);
 
         assertEquals(EstadoTransferencia.EN_TRANSITO, response.estado());
         assertEquals(0, response.cantidadEnviada().compareTo(new BigDecimal("15")));
         assertEquals("Transportes XYZ", response.transportista());
+        assertEquals(0, response.costo().compareTo(new BigDecimal("85000")));
         verify(inventarioService).registrarSalidaPorTransferencia(
                 eq(producto), eq(origen), eq(new BigDecimal("15")), eq(7L));
     }
@@ -328,7 +330,7 @@ class TransferenciaServiceTest {
     }
 
     @Test
-    void listar_sortCost_ordenaPorCantidadSolicitadaDescendente() {
+    void listar_sortCost_ordenaPorCostoDescendente() {
         when(currentUser.isAdmin()).thenReturn(true);
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         when(transferenciaRepository.search(any(), any(), pageableCaptor.capture()))
@@ -336,7 +338,7 @@ class TransferenciaServiceTest {
 
         transferenciaService.listar(null, null, "cost", 0, 20);
 
-        Sort.Order orden = pageableCaptor.getValue().getSort().getOrderFor("cantidadSolicitada");
+        Sort.Order orden = pageableCaptor.getValue().getSort().getOrderFor("costo");
         assertTrue(orden != null && orden.isDescending());
     }
 

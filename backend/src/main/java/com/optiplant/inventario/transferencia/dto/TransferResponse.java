@@ -18,6 +18,7 @@ public record TransferResponse(
         BigDecimal cantidadSolicitada,
         BigDecimal cantidadEnviada,
         BigDecimal cantidadRecibida,
+        BigDecimal costo,
         EstadoTransferencia estado,
         Urgencia urgencia,
         String transportista,

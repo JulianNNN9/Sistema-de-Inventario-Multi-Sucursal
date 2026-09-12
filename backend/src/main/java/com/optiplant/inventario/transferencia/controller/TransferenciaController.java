@@ -29,11 +29,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Ciclo de vida de transferencias entre sucursales (RF-17..RF-21). Solicitar,
- * aprobar/rechazar y resolver un faltante son de ADMIN_GENERAL / GERENTE_SUCURSAL
- * (decisiones de la sucursal); despachar y confirmar recepción están abiertos
- * a los tres roles (ejecución física del traslado). El alcance por sucursal
- * (origen/destino de esa transferencia puntual) se valida en el Service vía
+ * Ciclo de vida de transferencias entre sucursales (RF-17..RF-21). Solicitar
+ * (RF-17) está abierto a los tres roles: la tabla de actores y el diagrama de
+ * actividad tienen al Operador de Destino, junto al Administrador, como quien
+ * origina la solicitud. Aprobar/rechazar sigue siendo decisión exclusiva de
+ * ADMIN_GENERAL / GERENTE_SUCURSAL (la sucursal origen decide si acepta surtir);
+ * despachar y confirmar recepción están abiertos a los tres roles (ejecución
+ * física del traslado). El alcance por sucursal (origen/destino de esa
+ * transferencia puntual) se valida en el Service vía
  * {@code CurrentUser.assertPuedeOperarSobreSucursal}.
  */
 @Tag(name = "Transferencias", description = "Ciclo de vida completo de una transferencia entre sucursales (Módulo 4).")
@@ -46,7 +49,7 @@ public class TransferenciaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public TransferResponse solicitar(@Valid @RequestBody TransferRequest request) {
         return transferenciaService.solicitar(request);
     }

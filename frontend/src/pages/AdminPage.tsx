@@ -21,7 +21,7 @@ export function AdminPage() {
     <div className="space-y-6">
       <PageHeader
         title="Administración"
-        description="Alta y edición de usuarios, y alta de sucursales de la red."
+        description="Creación y edición de usuarios, y creación de sucursales de la red."
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

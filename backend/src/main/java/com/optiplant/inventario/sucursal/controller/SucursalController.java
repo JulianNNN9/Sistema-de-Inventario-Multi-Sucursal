@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Administración de sucursales. El alta ({@code POST}) es exclusiva de
+ * Administración de sucursales. La creación ({@code POST}) es exclusiva de
  * {@code ADMIN_GENERAL} (Sección 4.2); el listado ({@code GET}) es de solo
  * lectura y lo necesitan los tres roles: para consultar el inventario de otras
  * sucursales (RF-02, HU-02) y para elegir origen/destino en transferencias
  * (Módulo 4).
  */
-@Tag(name = "Sucursales", description = "Alta y listado de sucursales de la red (Módulo 0).")
+@Tag(name = "Sucursales", description = "Creación y listado de sucursales de la red (Módulo 0).")
 @RestController
 @RequestMapping("/api/v1/branches")
 @RequiredArgsConstructor

@@ -1,9 +1,9 @@
 package com.optiplant.inventario.compra.dto;
 
 import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
@@ -15,7 +15,7 @@ public record PurchaseOrderLineRequest(
         Long productId,
 
         @NotNull(message = "la cantidad es obligatoria")
-        @Positive(message = "la cantidad debe ser mayor que cero")
+        @DecimalMin(value = "1", message = "la cantidad mínima por línea es 1")
         @Digits(integer = 10, fraction = 2, message = "la cantidad admite hasta 10 enteros y 2 decimales")
         BigDecimal cantidad,
 

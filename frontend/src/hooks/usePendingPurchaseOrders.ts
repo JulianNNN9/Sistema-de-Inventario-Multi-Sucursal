@@ -1,25 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { listPurchaseOrders } from '../api/compras';
+import { listPendingPurchaseOrders } from '../api/compras';
 import type { ApiError, PageResponse } from '../types/api';
 import type { PurchaseOrderSummary } from '../types/compra';
 
 interface Options {
   page?: number;
   size?: number;
-  supplierId?: number;
-  productId?: number;
-  branchId?: number;
-  enabled?: boolean;
 }
 
-export function useComprasList({
-  page = 0,
-  size = 20,
-  supplierId,
-  productId,
-  branchId,
-  enabled = true,
-}: Options = {}) {
+/** Worklist de OPERADOR_INVENTARIO: órdenes PENDIENTES de su propia sucursal. */
+export function usePendingPurchaseOrders({ page = 0, size = 20 }: Options = {}) {
   const [data, setData] = useState<PageResponse<PurchaseOrderSummary> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +18,9 @@ export function useComprasList({
   const refetch = useCallback(() => setReloadTick((t) => t + 1), []);
 
   useEffect(() => {
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
     let active = true;
     setLoading(true);
-    listPurchaseOrders({ page, size, supplierId, productId, branchId })
+    listPendingPurchaseOrders({ page, size })
       .then((res) => {
         if (active) {
           setData(res);
@@ -42,7 +28,7 @@ export function useComprasList({
         }
       })
       .catch((err: ApiError) => {
-        if (active) setError(err.message ?? 'No se pudieron cargar las órdenes de compra');
+        if (active) setError(err.message ?? 'No se pudieron cargar las órdenes pendientes');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -50,7 +36,7 @@ export function useComprasList({
     return () => {
       active = false;
     };
-  }, [page, size, supplierId, productId, branchId, enabled, reloadTick]);
+  }, [page, size, reloadTick]);
 
   return { data, loading, error, refetch };
 }

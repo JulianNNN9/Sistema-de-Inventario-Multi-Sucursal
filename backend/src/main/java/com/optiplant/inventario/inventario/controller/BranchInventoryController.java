@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Consulta del inventario de cualquier sucursal en modo solo lectura (RF-02).
- * Disponible para los tres roles (Sección 4.2). Endpoint separado de
- * {@code SucursalController} para no heredar su restricción a ADMIN_GENERAL.
+ * Consulta del inventario de una sucursal en modo solo lectura (RF-02).
+ * Disponible para los tres roles, pero solo ADMIN_GENERAL puede apuntar a una
+ * sucursal distinta a la propia (scope forzado en el Service). Endpoint
+ * separado de {@code SucursalController} para no heredar su restricción a
+ * ADMIN_GENERAL.
  */
 @Tag(name = "Inventario por sucursal", description = "Consulta del inventario de una sucursal específica (Módulo 1).")
 @RestController

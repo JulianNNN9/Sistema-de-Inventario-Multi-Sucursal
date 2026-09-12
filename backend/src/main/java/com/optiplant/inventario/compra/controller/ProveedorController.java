@@ -21,11 +21,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Proveedores (RF-08). El alta y la edición forman parte del flujo de compras
- * (ADMIN / OPERADOR); el listado lo consultan los tres roles, entre otros para
+ * Proveedores (RF-08). Dato maestro: la creación y la edición son exclusivas
+ * de ADMIN_GENERAL; el listado lo consultan los tres roles, entre otros para
  * el histórico de compras por proveedor (HU-06).
  */
-@Tag(name = "Proveedores", description = "Alta, edición y listado de proveedores (Módulo 2).")
+@Tag(name = "Proveedores", description = "Creación, edición y listado de proveedores (Módulo 2).")
 @RestController
 @RequestMapping("/api/v1/suppliers")
 @RequiredArgsConstructor
@@ -35,13 +35,13 @@ public class ProveedorController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','OPERADOR_INVENTARIO')")
+    @PreAuthorize("hasRole('ADMIN_GENERAL')")
     public ProveedorResponse crear(@Valid @RequestBody ProveedorRequest request) {
         return proveedorService.crear(request);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','OPERADOR_INVENTARIO')")
+    @PreAuthorize("hasRole('ADMIN_GENERAL')")
     public ProveedorResponse actualizar(@PathVariable Long id, @Valid @RequestBody ProveedorRequest request) {
         return proveedorService.actualizar(id, request);
     }

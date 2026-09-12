@@ -25,20 +25,21 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Catálogo de productos (RF-01). Accesible a los tres roles ("CRUD
- * productos/inventario de su propia sucursal", Sección 4.2); el acotado por
- * sucursal se resuelve en el Service.
+ * Catálogo de productos (RF-01). Es un dato maestro único para toda la red (sin
+ * {@code sucursal_id}): los tres roles lo consultan, pero solo ADMIN_GENERAL y
+ * GERENTE_SUCURSAL lo mantienen (crear/editar/eliminar). OPERADOR_INVENTARIO es
+ * de solo lectura sobre el catálogo.
  */
 @Tag(name = "Productos", description = "Catálogo de productos (Módulo 1).")
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
 public class ProductoController {
 
     private final ProductoService productoService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public PageResponse<ProductoResponse> listar(
             @RequestParam(name = "branchId", required = false) Long branchId,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -47,16 +48,19 @@ public class ProductoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
     public ProductoResponse crear(@Valid @RequestBody ProductoRequest request) {
         return productoService.crear(request);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public ProductoResponse obtener(@PathVariable Long id) {
         return productoService.obtener(id);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
     public ProductoResponse actualizar(@PathVariable Long id,
                                        @Valid @RequestBody ProductoUpdateRequest request) {
         return productoService.actualizar(id, request);
@@ -64,6 +68,7 @@ public class ProductoController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
     public void eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
     }

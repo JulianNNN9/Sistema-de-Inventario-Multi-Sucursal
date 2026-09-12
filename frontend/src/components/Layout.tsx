@@ -28,13 +28,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Panel', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Panel', icon: LayoutDashboard, end: true, roles: ['ADMIN_GENERAL', 'GERENTE_SUCURSAL'] },
   { to: '/products', label: 'Productos', icon: Package },
   { to: '/inventory', label: 'Inventario', icon: Warehouse },
   { to: '/purchases', label: 'Compras', icon: ShoppingCart },
   { to: '/sales', label: 'Ventas', icon: Receipt },
   { to: '/transfers', label: 'Transferencias', icon: ArrowLeftRight },
-  { to: '/logistics', label: 'Logística', icon: Truck, roles: ['ADMIN_GENERAL'] },
+  { to: '/logistics', label: 'Logística', icon: Truck, roles: ['ADMIN_GENERAL', 'GERENTE_SUCURSAL'] },
   { to: '/admin', label: 'Administración', icon: ShieldCheck, roles: ['ADMIN_GENERAL'] },
 ];
 

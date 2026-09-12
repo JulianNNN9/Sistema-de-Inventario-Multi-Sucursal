@@ -29,10 +29,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Ciclo de vida de transferencias entre sucursales (RF-17..RF-21). Autorización
- * por acción según la Sección 4.2 — nótese que, a diferencia del resto de
- * módulos, ADMIN_GENERAL NO puede aprobar/despachar/recibir/resolver (la matriz
- * lo marca explícitamente ✘ en esas 4 filas).
+ * Ciclo de vida de transferencias entre sucursales (RF-17..RF-21). Solicitar,
+ * aprobar/rechazar y resolver un faltante son de ADMIN_GENERAL / GERENTE_SUCURSAL
+ * (decisiones de la sucursal); despachar y confirmar recepción están abiertos
+ * a los tres roles (ejecución física del traslado). El alcance por sucursal
+ * (origen/destino de esa transferencia puntual) se valida en el Service vía
+ * {@code CurrentUser.assertPuedeOperarSobreSucursal}.
  */
 @Tag(name = "Transferencias", description = "Ciclo de vida completo de una transferencia entre sucursales (Módulo 4).")
 @RestController
@@ -44,31 +46,31 @@ public class TransferenciaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','OPERADOR_INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
     public TransferResponse solicitar(@Valid @RequestBody TransferRequest request) {
         return transferenciaService.solicitar(request);
     }
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasRole('GERENTE_SUCURSAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
     public TransferResponse aprobar(@PathVariable Long id, @Valid @RequestBody ApproveRequest request) {
         return transferenciaService.aprobar(id, request);
     }
 
     @PutMapping("/{id}/dispatch")
-    @PreAuthorize("hasRole('OPERADOR_INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public TransferResponse despachar(@PathVariable Long id, @Valid @RequestBody DispatchRequest request) {
         return transferenciaService.despachar(id, request);
     }
 
     @PutMapping("/{id}/receive")
-    @PreAuthorize("hasRole('OPERADOR_INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public TransferResponse recibir(@PathVariable Long id, @Valid @RequestBody ReceiveRequest request) {
         return transferenciaService.recibir(id, request);
     }
 
     @PutMapping("/{id}/resolve")
-    @PreAuthorize("hasRole('GERENTE_SUCURSAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
     public TransferResponse resolver(@PathVariable Long id, @Valid @RequestBody ResolveRequest request) {
         return transferenciaService.resolver(id, request);
     }

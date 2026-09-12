@@ -21,6 +21,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useBranches } from '../hooks/useBranches';
 import { useComprasList } from '../hooks/useComprasList';
 import { useMutation } from '../hooks/useMutation';
+import { usePendingPurchaseOrders } from '../hooks/usePendingPurchaseOrders';
 import { useProductos } from '../hooks/useProductos';
 import { useProveedores } from '../hooks/useProveedores';
 import { usePurchaseOrder } from '../hooks/usePurchaseOrder';
@@ -45,8 +46,11 @@ const ESTADO_TONE: Record<EstadoOrdenCompra, 'warning' | 'success' | 'neutral'> 
 
 export function ComprasPage() {
   const { rol } = useAuth();
-  const canManage = rol === 'ADMIN_GENERAL' || rol === 'OPERADOR_INVENTARIO';
   const isAdmin = rol === 'ADMIN_GENERAL';
+  // Crear orden y consultar histórico/detalle: decisión y supervisión de compras
+  // (ADMIN + GERENTE). OPERADOR_INVENTARIO no ve precios ni histórico de compras.
+  const canManage = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL';
+  const isOperador = rol === 'OPERADOR_INVENTARIO';
 
   const { proveedores } = useProveedores();
   const { data: productosData } = useProductos({ page: 0, size: 300 });
@@ -63,6 +67,7 @@ export function ComprasPage() {
     supplierId: supplierId ? Number(supplierId) : undefined,
     productId: productId ? Number(productId) : undefined,
     branchId: branchId ? Number(branchId) : undefined,
+    enabled: canManage,
   });
 
   const [formOpen, setFormOpen] = useState(false);
@@ -119,24 +124,34 @@ export function ComprasPage() {
     },
   ];
 
+  if (!canManage) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Compras"
+          description="Órdenes pendientes de confirmar recepción en tu sucursal."
+        />
+        {isOperador && <PendingReceiptsWorklist />}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Compras"
         description="Órdenes de compra a proveedores e histórico."
         actions={
-          canManage ? (
-            <>
-              <Button variant="secondary" onClick={() => setSuppliersOpen(true)}>
-                <Truck className="h-4 w-4" aria-hidden />
-                Proveedores
-              </Button>
-              <Button onClick={() => setFormOpen(true)}>
-                <Plus className="h-4 w-4" aria-hidden />
-                Nueva orden
-              </Button>
-            </>
-          ) : undefined
+          <>
+            <Button variant="secondary" onClick={() => setSuppliersOpen(true)}>
+              <Truck className="h-4 w-4" aria-hidden />
+              Proveedores
+            </Button>
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4" aria-hidden />
+              Nueva orden
+            </Button>
+          </>
         }
       />
 
@@ -211,7 +226,7 @@ export function ComprasPage() {
         }}
       />
 
-      <SuppliersModal open={suppliersOpen} onClose={() => setSuppliersOpen(false)} />
+      <SuppliersModal open={suppliersOpen} isAdmin={isAdmin} onClose={() => setSuppliersOpen(false)} />
 
       <OrderDetailModal
         id={detailId}
@@ -222,6 +237,91 @@ export function ComprasPage() {
           refetch();
         }}
       />
+
+      <ConfirmDialog
+        open={receiptTarget !== null}
+        title="Confirmar recepción"
+        message={`¿Confirmar la recepción completa de la orden #${receiptTarget?.id ?? ''}? Se actualizará el inventario y el costo promedio.`}
+        confirmLabel="Confirmar recepción"
+        loading={receiptM.submitting}
+        error={receiptM.error}
+        onConfirm={handleConfirmReceipt}
+        onCancel={() => {
+          setReceiptTarget(null);
+          receiptM.resetError();
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * OPERADOR_INVENTARIO no ve el histórico de compras (precios, filtros por
+ * proveedor/producto) — pero sí necesita saber qué órdenes de su propia
+ * sucursal están pendientes de recepción para poder confirmarlas. Esta es su
+ * worklist: mínima (n.º, proveedor, fecha), sin montos.
+ */
+function PendingReceiptsWorklist() {
+  const [page, setPage] = useState(0);
+  const { data, loading, error, refetch } = usePendingPurchaseOrders({ page, size: PAGE_SIZE });
+  const [receiptTarget, setReceiptTarget] = useState<PurchaseOrderSummary | null>(null);
+  const receiptM = useMutation(confirmReceipt);
+  const { showSuccess, showError } = useToast();
+
+  async function handleConfirmReceipt() {
+    if (!receiptTarget) return;
+    try {
+      await receiptM.mutate(receiptTarget.id);
+      showSuccess(`Orden de compra #${receiptTarget.id} marcada como recibida.`);
+      setReceiptTarget(null);
+      refetch();
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo confirmar la recepción.');
+      /* el error también se muestra en el ConfirmDialog */
+    }
+  }
+
+  const columns: Column<PurchaseOrderSummary>[] = [
+    { key: 'id', header: 'N.º', render: (o) => <span className="font-medium text-slate-900">#{o.id}</span> },
+    { key: 'fecha', header: 'Fecha', render: (o) => formatDateTime(o.fecha) },
+    { key: 'proveedor', header: 'Proveedor', render: (o) => o.supplierNombre },
+    {
+      key: 'acciones',
+      header: '',
+      align: 'right',
+      render: (o) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setReceiptTarget(o)}
+          aria-label={`Confirmar recepción de la orden ${o.id}`}
+        >
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
+          Confirmar recepción
+        </Button>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {error && <ErrorAlert message={error} />}
+
+      <DataTable
+        columns={columns}
+        rows={data?.content ?? []}
+        rowKey={(o) => o.id}
+        loading={loading}
+        empty={
+          <EmptyState
+            icon={Truck}
+            title="Sin órdenes pendientes"
+            description="No hay órdenes de compra esperando confirmación de recepción en tu sucursal."
+          />
+        }
+      />
+
+      {data && <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />}
 
       <ConfirmDialog
         open={receiptTarget !== null}
@@ -570,10 +670,11 @@ function OrderDetailModal({ id, canManage, onClose, onReceived }: OrderDetailMod
 
 interface SuppliersModalProps {
   open: boolean;
+  isAdmin: boolean;
   onClose: () => void;
 }
 
-function SuppliersModal({ open, onClose }: SuppliersModalProps) {
+function SuppliersModal({ open, isAdmin, onClose }: SuppliersModalProps) {
   const { proveedores, loading, refetch } = useProveedores();
   const { showSuccess, showError } = useToast();
   const createM = useMutation(createSupplier);
@@ -656,21 +757,28 @@ function SuppliersModal({ open, onClose }: SuppliersModalProps) {
         {loading && <p className="text-sm text-slate-500">Cargando…</p>}
         {!loading && proveedoresFiltrados.length > 0 && (
           <ul className="max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200">
-            {proveedoresFiltrados.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => startEdit(p)}
-                  className={cn(
-                    'flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50',
-                    editing?.id === p.id && 'bg-brand-50',
-                  )}
-                >
+            {proveedoresFiltrados.map((p) =>
+              isAdmin ? (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => startEdit(p)}
+                    className={cn(
+                      'flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50',
+                      editing?.id === p.id && 'bg-brand-50',
+                    )}
+                  >
+                    <span className="min-w-0 truncate font-medium text-slate-800">{p.nombre}</span>
+                    <span className="shrink-0 text-xs text-slate-500">Paga: {p.frecuenciaPago}</span>
+                  </button>
+                </li>
+              ) : (
+                <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                   <span className="min-w-0 truncate font-medium text-slate-800">{p.nombre}</span>
                   <span className="shrink-0 text-xs text-slate-500">Paga: {p.frecuenciaPago}</span>
-                </button>
-              </li>
-            ))}
+                </li>
+              ),
+            )}
           </ul>
         )}
         {!loading && proveedoresFiltrados.length === 0 && (
@@ -681,51 +789,53 @@ function SuppliersModal({ open, onClose }: SuppliersModalProps) {
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 pt-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700">
-              {editing ? `Editando "${editing.nombre}"` : 'Nuevo proveedor'}
-            </span>
-            {editing && (
-              <Button type="button" size="sm" variant="ghost" onClick={startCreate}>
-                Cancelar edición
-              </Button>
-            )}
-          </div>
-          {mutation.error && <ErrorAlert message={mutation.error} />}
-          <Input
-            label="Nombre"
-            hint="Nombre comercial con el que se identifica al proveedor."
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-          />
-          <Input
-            label="Cada cuánto se le paga"
-            hint="Plazo de pago acordado (ej. Contado, 30 días, 60 días). Se usará automáticamente en cada orden de compra a este proveedor."
-            value={frecuenciaPago}
-            onChange={(e) => setFrecuenciaPago(e.target.value)}
-            placeholder="30 días"
-            required
-          />
-          <Textarea
-            label="Condiciones adicionales (opcional)"
-            hint="Cualquier otra condición comercial acordada con el proveedor."
-            rows={2}
-            value={condiciones}
-            onChange={(e) => setCondiciones(e.target.value)}
-          />
-          <Button type="submit" size="sm" loading={mutation.submitting}>
-            {editing ? (
-              'Guardar cambios'
-            ) : (
-              <>
-                <Plus className="h-4 w-4" aria-hidden />
-                Agregar proveedor
-              </>
-            )}
-          </Button>
-        </form>
+        {isAdmin && (
+          <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700">
+                {editing ? `Editando "${editing.nombre}"` : 'Nuevo proveedor'}
+              </span>
+              {editing && (
+                <Button type="button" size="sm" variant="ghost" onClick={startCreate}>
+                  Cancelar edición
+                </Button>
+              )}
+            </div>
+            {mutation.error && <ErrorAlert message={mutation.error} />}
+            <Input
+              label="Nombre"
+              hint="Nombre comercial con el que se identifica al proveedor."
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              required
+            />
+            <Input
+              label="Cada cuánto se le paga"
+              hint="Plazo de pago acordado (ej. Contado, 30 días, 60 días). Se usará automáticamente en cada orden de compra a este proveedor."
+              value={frecuenciaPago}
+              onChange={(e) => setFrecuenciaPago(e.target.value)}
+              placeholder="30 días"
+              required
+            />
+            <Textarea
+              label="Condiciones adicionales (opcional)"
+              hint="Cualquier otra condición comercial acordada con el proveedor."
+              rows={2}
+              value={condiciones}
+              onChange={(e) => setCondiciones(e.target.value)}
+            />
+            <Button type="submit" size="sm" loading={mutation.submitting}>
+              {editing ? (
+                'Guardar cambios'
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" aria-hidden />
+                  Agregar proveedor
+                </>
+              )}
+            </Button>
+          </form>
+        )}
       </div>
     </Modal>
   );

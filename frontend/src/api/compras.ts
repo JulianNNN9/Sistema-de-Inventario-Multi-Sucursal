@@ -19,6 +19,16 @@ export async function listPurchaseOrders(
   return data;
 }
 
+/** Worklist de OPERADOR_INVENTARIO: solo las pendientes de su propia sucursal. */
+export async function listPendingPurchaseOrders(
+  params: { page?: number; size?: number } = {},
+): Promise<PageResponse<PurchaseOrderSummary>> {
+  const { data } = await apiClient.get<PageResponse<PurchaseOrderSummary>>('/purchase-orders/pending', {
+    params,
+  });
+  return data;
+}
+
 export async function getPurchaseOrder(id: number): Promise<PurchaseOrder> {
   const { data } = await apiClient.get<PurchaseOrder>(`/purchase-orders/${id}`);
   return data;

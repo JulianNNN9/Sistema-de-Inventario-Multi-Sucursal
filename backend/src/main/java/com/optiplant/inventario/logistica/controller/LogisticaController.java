@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Reporte de cumplimiento logístico por ruta (RF-25, HU-13: "Como administrador
- * general, quiero un reporte de cumplimiento logístico por ruta"). No paginado
- * (agregación acotada por nº de sucursales × transportistas, igual que el
- * Dashboard del Módulo 6).
+ * Reporte de cumplimiento logístico por ruta (RF-25). No paginado (agregación
+ * acotada por nº de sucursales × transportistas, igual que el Dashboard del
+ * Módulo 6). ADMIN_GENERAL ve todas las sucursales; GERENTE_SUCURSAL solo ve
+ * el reporte de su propia sucursal (el {@code branchId} que envíe se ignora y
+ * se fuerza en el Service — ver RESPONSABILIDADES_ROLES.md, Sección 5).
  */
 @Tag(name = "Logística", description = "Reporte de cumplimiento de tiempos de entrega por ruta (Módulo 5).")
 @RestController
@@ -27,7 +28,7 @@ public class LogisticaController {
     private final LogisticaService logisticaService;
 
     @GetMapping("/compliance-report")
-    @PreAuthorize("hasRole('ADMIN_GENERAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
     public List<ComplianceReportResponse> complianceReport(
             @RequestParam(name = "branchId", required = false) Long branchId,
             @RequestParam(name = "route", required = false) String route) {

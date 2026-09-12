@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Registro de ingresos y retiros de inventario (RF-03, RF-04, RF-07). El alcance
- * por sucursal se valida en el Service (regla transversal RF-36).
+ * por sucursal se valida en el Service (regla transversal RF-36). Los tres roles
+ * pueden registrar movimientos de su propia sucursal.
  */
 @Tag(name = "Movimientos de inventario", description = "Registro de ingresos y retiros de stock (Módulo 1).")
 @RestController

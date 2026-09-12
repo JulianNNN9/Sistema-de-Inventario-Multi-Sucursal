@@ -1,6 +1,7 @@
 package com.optiplant.inventario.compra.repository;
 
 import com.optiplant.inventario.compra.dto.PurchaseOrderSummaryResponse;
+import com.optiplant.inventario.compra.entity.EstadoOrdenCompra;
 import com.optiplant.inventario.compra.entity.OrdenCompra;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,4 +51,31 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> 
                                                        @Param("branchId") Long branchId,
                                                        @Param("productId") Long productId,
                                                        Pageable pageable);
+
+    /**
+     * Órdenes PENDIENTES de una sucursal (worklist de OPERADOR_INVENTARIO para
+     * "confirmar recepción"): no es el histórico de compras (RF-11, solo
+     * ADMIN/GERENTE) — es la lista mínima de qué falta recibir en su propia
+     * sucursal, sin filtros de proveedor/producto.
+     */
+    @Query(value = """
+            select new com.optiplant.inventario.compra.dto.PurchaseOrderSummaryResponse(
+                o.id, prov.id, prov.nombre, suc.id, suc.nombre, o.fecha, o.estado,
+                coalesce((select sum(d.cantidad * d.precioUnitario)
+                          from OrdenCompraDetalle d where d.orden = o), 0))
+            from OrdenCompra o
+            join o.proveedor prov
+            join o.sucursal suc
+            where o.estado = :estado
+              and suc.id = :branchId
+            order by o.fecha asc
+            """,
+            countQuery = """
+            select count(o) from OrdenCompra o
+            where o.estado = :estado
+              and o.sucursal.id = :branchId
+            """)
+    Page<PurchaseOrderSummaryResponse> findPendingByBranch(@Param("branchId") Long branchId,
+                                                           @Param("estado") EstadoOrdenCompra estado,
+                                                           Pageable pageable);
 }

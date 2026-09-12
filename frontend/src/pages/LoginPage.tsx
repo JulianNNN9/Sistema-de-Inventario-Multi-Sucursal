@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Boxes, LogIn } from 'lucide-react';
 import { Button, Input } from '../components/ui';
@@ -9,15 +9,16 @@ import type { ApiError } from '../types/api';
 
 export function LoginPage() {
   const { isAuthenticated, login } = useAuth();
-  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) {
-    const from = (location.state as { from?: string } | null)?.from ?? '/';
-    return <Navigate to={from} replace />;
+    // Siempre al panel tras iniciar sesión: no reutilizar la ruta desde la que
+    // se expulsó a la sesión anterior (evita cargar la pantalla de la cuenta
+    // previa al cambiar de usuario tras un logout).
+    return <Navigate to="/" replace />;
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

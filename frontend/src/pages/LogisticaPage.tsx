@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Truck } from 'lucide-react';
 import { Badge, DataTable, EmptyState, Input, PageHeader, Select, type Column } from '../components/ui';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { useAuth } from '../hooks/useAuth';
 import { useBranches } from '../hooks/useBranches';
 import { useComplianceReport } from '../hooks/useComplianceReport';
 import { formatNumber } from '../lib/format';
@@ -21,6 +22,8 @@ function desviacionTone(horas: number | null): 'neutral' | 'success' | 'warning'
 }
 
 export function LogisticaPage() {
+  const { rol } = useAuth();
+  const isAdmin = rol === 'ADMIN_GENERAL';
   const { branches } = useBranches();
   const [branchId, setBranchId] = useState('');
   const [route, setRoute] = useState('');
@@ -59,13 +62,15 @@ export function LogisticaPage() {
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Select
-          label="Sucursal de origen"
-          value={branchId}
-          onChange={(e) => setBranchId(e.target.value)}
-          options={branches.map((b) => ({ value: b.id, label: b.nombre }))}
-          placeholder="Todas"
-        />
+        {isAdmin && (
+          <Select
+            label="Sucursal de origen"
+            value={branchId}
+            onChange={(e) => setBranchId(e.target.value)}
+            options={branches.map((b) => ({ value: b.id, label: b.nombre }))}
+            placeholder="Todas"
+          />
+        )}
         <Input
           label="Transportista"
           value={route}

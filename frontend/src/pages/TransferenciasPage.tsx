@@ -85,9 +85,11 @@ const URGENCIA_TONE: Record<Urgencia, 'neutral' | 'danger' | 'info'> = {
 export function TransferenciasPage() {
   const { rol, sucursalId } = useAuth();
   const isAdmin = rol === 'ADMIN_GENERAL';
-  // Solicitar/aprobar/resolver: decisión de la sucursal (ADMIN + GERENTE).
+  // Solicitar (RF-17): abierto a los tres roles (el Operador de Destino también
+  // origina solicitudes, según la tabla de actores y el diagrama de actividad).
+  // Aprobar: decisión de la sucursal (ADMIN + GERENTE).
   // Despachar/recibir: ejecución física, abierta a los tres roles.
-  const puedeSolicitar = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL';
+  const puedeSolicitar = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL' || rol === 'OPERADOR_INVENTARIO';
 
   const { branches } = useBranches();
 

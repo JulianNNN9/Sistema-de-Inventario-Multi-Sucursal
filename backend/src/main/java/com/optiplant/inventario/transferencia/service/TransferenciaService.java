@@ -119,6 +119,7 @@ public class TransferenciaService {
         transferencia.setCantidadEnviada(request.cantidadEnviada());
         transferencia.setTransportista(request.transportista());
         transferencia.setFechaEstimadaLlegada(request.fechaEstimadaLlegada());
+        transferencia.setCosto(request.costo());
         transferencia.setEstado(EstadoTransferencia.EN_TRANSITO);
         transferenciaRepository.save(transferencia);
         registrarEvento(transferencia, EstadoTransferencia.EN_TRANSITO,
@@ -212,9 +213,9 @@ public class TransferenciaService {
 
     /**
      * RF-23/RF-24 (Módulo 5): {@code sort} acepta {@code priority} (urgencia
-     * ALTA&gt;MEDIA&gt;BAJA), {@code cost} (proxy: cantidad_solicitada desc, no hay
-     * campo de costo en el modelo) o {@code time} (fecha_estimada_llegada asc);
-     * cualquier otro valor no ordena.
+     * ALTA&gt;MEDIA&gt;BAJA), {@code cost} (costo real desc, capturado en el
+     * despacho) o {@code time} (fecha_estimada_llegada asc); cualquier otro
+     * valor no ordena.
      */
     @Transactional(readOnly = true)
     public PageResponse<TransferResponse> listar(EstadoTransferencia estado, Long branchIdParam,
@@ -228,7 +229,7 @@ public class TransferenciaService {
 
     private Sort resolverOrden(String sort) {
         if ("cost".equals(sort)) {
-            return Sort.by(Sort.Direction.DESC, "cantidadSolicitada");
+            return Sort.by(Sort.Direction.DESC, "costo");
         }
         if ("time".equals(sort)) {
             return Sort.by(Sort.Direction.ASC, "fechaEstimadaLlegada");
@@ -286,7 +287,7 @@ public class TransferenciaService {
                 t.getProducto().getId(), t.getProducto().getSku(), t.getProducto().getNombre(),
                 t.getSucursalOrigen().getId(), t.getSucursalOrigen().getNombre(),
                 t.getSucursalDestino().getId(), t.getSucursalDestino().getNombre(),
-                t.getCantidadSolicitada(), t.getCantidadEnviada(), t.getCantidadRecibida(),
+                t.getCantidadSolicitada(), t.getCantidadEnviada(), t.getCantidadRecibida(), t.getCosto(),
                 t.getEstado(), t.getUrgencia(), t.getTransportista(),
                 t.getFechaEstimadaLlegada(), t.getFechaRealLlegada());
     }

@@ -9,6 +9,7 @@ CREATE TABLE transferencia (
     cantidad_solicitada    NUMERIC(12, 2) NOT NULL,
     cantidad_enviada       NUMERIC(12, 2),
     cantidad_recibida      NUMERIC(12, 2),
+    costo                  NUMERIC(12, 2) NOT NULL DEFAULT 0,
     estado                 VARCHAR(30)   NOT NULL,
     urgencia               VARCHAR(20)   NOT NULL,
     transportista          VARCHAR(120),

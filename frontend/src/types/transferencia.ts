@@ -24,6 +24,7 @@ export interface Transfer {
   cantidadSolicitada: number;
   cantidadEnviada: number | null;
   cantidadRecibida: number | null;
+  costo: number;
   estado: EstadoTransferencia;
   urgencia: Urgencia;
   transportista: string | null;
@@ -47,6 +48,7 @@ export interface DispatchInput {
   cantidadEnviada: number;
   transportista: string;
   fechaEstimadaLlegada: string;
+  costo: number;
 }
 
 export interface ReceiveInput {

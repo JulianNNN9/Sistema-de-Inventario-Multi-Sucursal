@@ -37,7 +37,7 @@ import { useProductos } from '../hooks/useProductos';
 import { useTransferEvents } from '../hooks/useTransferEvents';
 import { useTransferenciasList } from '../hooks/useTransferenciasList';
 import { useToast } from '../context/ToastContext';
-import { formatDateTime, formatNumber } from '../lib/format';
+import { formatCurrency, formatDateTime, formatNumber } from '../lib/format';
 import type { TransferSort } from '../types/logistica';
 import type {
   EstadoTransferencia,
@@ -50,7 +50,7 @@ const PAGE_SIZE = 20;
 
 const SORT_OPTIONS: { value: TransferSort; label: string }[] = [
   { value: 'priority', label: 'Prioridad (urgencia)' },
-  { value: 'cost', label: 'Cantidad solicitada' },
+  { value: 'cost', label: 'Costo de envío' },
   { value: 'time', label: 'Llegada estimada' },
 ];
 
@@ -167,6 +167,12 @@ export function TransferenciasPage() {
           {t.cantidadRecibida !== null && ` / ${formatNumber(t.cantidadRecibida)}`}
         </span>
       ),
+    },
+    {
+      key: 'costo',
+      header: 'Costo envío',
+      align: 'right',
+      render: (t) => (t.costo > 0 ? formatCurrency(t.costo) : '—'),
     },
     {
       key: 'urgencia',
@@ -506,11 +512,13 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
   const [cantidadEnviada, setCantidadEnviada] = useState('');
   const [transportista, setTransportista] = useState('');
   const [fecha, setFecha] = useState('');
+  const [costo, setCosto] = useState('');
 
   useEffect(() => {
     setCantidadEnviada(transfer ? String(transfer.cantidadSolicitada) : '');
     setTransportista('');
     setFecha('');
+    setCosto('');
     resetError();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transfer?.id]);
@@ -523,6 +531,7 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
         cantidadEnviada: Number(cantidadEnviada),
         transportista,
         fechaEstimadaLlegada: new Date(fecha).toISOString(),
+        costo: Number(costo),
       });
       showSuccess(`Transferencia #${transfer.id} despachada.`);
       onDone();
@@ -574,6 +583,16 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
           type="datetime-local"
           value={fecha}
           onChange={(e) => setFecha(e.target.value)}
+          required
+        />
+        <Input
+          label="Costo del envío"
+          hint="Costo real del transporte; se usa para ordenar la bandeja por costo (RF-23)."
+          type="number"
+          step="0.01"
+          min="0"
+          value={costo}
+          onChange={(e) => setCosto(e.target.value)}
           required
         />
       </form>

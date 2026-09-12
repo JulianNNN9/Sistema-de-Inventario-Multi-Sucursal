@@ -32,5 +32,10 @@ management:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:dev_jwt_secret_change_me_0123456789_abcdefghij}
+    # RNF-02: sin default hardcodeado a propósito. En docker-compose,
+    # docker-entrypoint.sh siempre exporta JWT_SECRET (lo genera si falta);
+    # fuera de Docker (p. ej. `mvn spring-boot:run`) hay que exportarlo a
+    # mano, porque un fallback público aquí sería el mismo problema que se
+    # corrigió en docker-compose.yml, solo movido a este archivo.
+    secret: ${JWT_SECRET}
     expiration-hours: 8

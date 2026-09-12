@@ -1,0 +1,4 @@
+# Los scripts de shell se ejecutan dentro de contenedores Linux: un CRLF en el
+# shebang (p. ej. por `core.autocrlf=true` al clonar en Windows) rompe el
+# intérprete ("/bin/sh^M: bad interpreter").
+*.sh text eol=lf

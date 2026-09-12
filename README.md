@@ -29,7 +29,7 @@ Esto levanta 3 contenedores:
 | `backend` | http://localhost:8080 | API REST de Spring Boot (`/actuator/health` para healthcheck) |
 | `db` | localhost:5432 | PostgreSQL 16 (volumen `pgdata`, migraciones Flyway aplicadas automáticamente al arrancar) |
 
-No se requiere configuración manual: `docker-compose.yml` incluye valores por defecto para todas las variables. Para sobrescribirlos, copiar `.env.example` a `.env`.
+No se requiere configuración manual: `docker-compose.yml` incluye valores por defecto para todas las variables, salvo el secreto JWT, que se genera solo (ver "Decisiones de diseño" → RNF-02). Para sobrescribir cualquier valor, copiar `.env.example` a `.env`.
 
 **Credenciales de arranque** (creadas por la migración `V3__seed_admin.sql`):
 
@@ -85,6 +85,7 @@ Todos los módulos del alcance funcional están completos, con backend, tests y 
 - **Errores (RNF-04)**: un `GlobalExceptionHandler` único traduce cada excepción de negocio a un código HTTP y un mensaje específico (nunca genérico), con el mismo formato de error en toda la API.
 - **PostgreSQL y parámetros nulos**: los filtros opcionales en consultas JPQL usan el idioma `coalesce(:param, columna)` en vez de `:param IS NULL`, evitando un error real de inferencia de tipos de PostgreSQL con parámetros nulos aislados (detectado y corregido durante el desarrollo).
 - **Documentación de roles en OpenAPI (Módulo 9)**: un `OperationCustomizer` (`RoleDescriptionOperationCustomizer`) lee en tiempo real la anotación `@PreAuthorize` real de cada endpoint y la traduce a una descripción en español dentro del spec — la documentación de "qué rol puede usar este endpoint" nunca puede desincronizarse de la autorización efectiva, porque se genera a partir de ella.
+- **Secreto JWT sin hardcodear (RNF-02)**: ni `docker-compose.yml` ni `application.yml` tienen un valor de secreto legible (el placeholder `dev_jwt_secret_change_me_...` que existía antes quedaba comprometido por estar en el repo, aunque fuera "solo para dev"). En su lugar, `backend/docker-entrypoint.sh` revisa si `JWT_SECRET` llegó por entorno; si no, genera uno aleatorio con `openssl rand -hex 32` la primera vez que arranca el contenedor y lo persiste en el volumen Docker `jwt_secret` (así un simple `docker compose restart backend` no invalida todos los tokens ya emitidos; solo un `docker compose down -v` lo regenera, igual que pasa con `pgdata`). Esto no rompe RT-03 ("un solo comando, sin configuración manual"): `docker compose up` sigue siendo suficiente, el secreto simplemente se genera solo en vez de venir fijo en el repo. `application.yml` tampoco tiene fallback: `${JWT_SECRET}` sin default, a propósito, para que arrancar el backend fuera de Docker sin definir la variable falle rápido en vez de firmar tokens silenciosamente con un secreto público conocido.
 
 ## Tests
 

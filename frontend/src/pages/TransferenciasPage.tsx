@@ -85,8 +85,9 @@ const URGENCIA_TONE: Record<Urgencia, 'neutral' | 'danger' | 'info'> = {
 export function TransferenciasPage() {
   const { rol, sucursalId } = useAuth();
   const isAdmin = rol === 'ADMIN_GENERAL';
-  // Solicitar (RF-17): abierto a los tres roles (el Operador de Destino también
-  // origina solicitudes, según la tabla de actores y el diagrama de actividad).
+  // Solicitar (RF-17) y resolver faltantes (RF-21): abierto a los tres roles
+  // (el Operador de Destino también origina solicitudes y define el tratamiento
+  // del faltante, según la tabla de actores y el diagrama de actividad).
   // Aprobar: decisión de la sucursal (ADMIN + GERENTE).
   // Despachar/recibir: ejecución física, abierta a los tres roles.
   const puedeSolicitar = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL' || rol === 'OPERADOR_INVENTARIO';
@@ -130,7 +131,7 @@ export function TransferenciasPage() {
   }
   function canResolve(t: Transfer) {
     if (t.estado !== 'CON_FALTANTES') return false;
-    return isAdmin || (rol === 'GERENTE_SUCURSAL' && sucursalId === t.sucursalDestinoId);
+    return isAdmin || sucursalId === t.sucursalDestinoId;
   }
 
   async function handleApproveConfirm() {

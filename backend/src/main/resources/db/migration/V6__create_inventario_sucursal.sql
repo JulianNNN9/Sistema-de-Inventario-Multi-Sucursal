@@ -7,5 +7,6 @@ CREATE TABLE inventario_sucursal (
     cantidad_actual          NUMERIC(12, 2) NOT NULL DEFAULT 0,
     stock_minimo             NUMERIC(12, 2) NOT NULL DEFAULT 0,
     costo_promedio_ponderado NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    version                  BIGINT        NOT NULL DEFAULT 0,
     CONSTRAINT uq_inventario_producto_sucursal UNIQUE (producto_id, sucursal_id)
 );

@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -126,6 +127,14 @@ public class GlobalExceptionHandler {
         log.warn("Conflicto de integridad de datos en {}", request.getRequestURI(), ex);
         return build(HttpStatus.CONFLICT,
                 "No se pudo completar la operación porque entra en conflicto con datos existentes", request);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiErrorResponse> handleOptimisticLocking(ObjectOptimisticLockingFailureException ex,
+                                                                     HttpServletRequest request) {
+        log.warn("Conflicto de bloqueo optimista en {}", request.getRequestURI(), ex);
+        return build(HttpStatus.CONFLICT,
+                "El inventario fue modificado por otra operación al mismo tiempo. Intenta nuevamente.", request);
     }
 
     @ExceptionHandler(Exception.class)

@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -62,4 +63,8 @@ public class InventarioSucursal {
     @Builder.Default
     @Column(name = "costo_promedio_ponderado", nullable = false, precision = 12, scale = 2)
     private BigDecimal costoPromedioPonderado = BigDecimal.ZERO;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 }

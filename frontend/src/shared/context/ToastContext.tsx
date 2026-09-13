@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import { CONCURRENCY_CONFLICT_EVENT } from '../lib/concurrencyConflict';
 import { cn } from '../lib/cn';
 
 type ToastVariant = 'success' | 'error';
@@ -38,6 +39,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const showSuccess = useCallback((message: string) => push('success', message), [push]);
   const showError = useCallback((message: string) => push('error', message), [push]);
+
+  // El cliente Axios (fuera del árbol de React) dispara este evento cuando
+  // una escritura choca con el bloqueo optimista de InventarioSucursal, para
+  // que la alerta se vea sin importar si la pantalla que la originó usa
+  // toasts o no.
+  useEffect(() => {
+    function handleConcurrencyConflict(event: Event) {
+      const message = (event as CustomEvent<string>).detail;
+      showError(message);
+    }
+    window.addEventListener(CONCURRENCY_CONFLICT_EVENT, handleConcurrencyConflict);
+    return () => window.removeEventListener(CONCURRENCY_CONFLICT_EVENT, handleConcurrencyConflict);
+  }, [showError]);
 
   return (
     <ToastContext.Provider value={{ showSuccess, showError }}>

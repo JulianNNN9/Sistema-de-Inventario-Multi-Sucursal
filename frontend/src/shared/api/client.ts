@@ -1,6 +1,7 @@
 import axios, { type AxiosError } from 'axios';
 import type { ApiError } from '../types/api';
 import { clearSession, getToken } from '../../features/auth/api/session';
+import { CONCURRENCY_CONFLICT_EVENT, isConcurrencyConflictError } from '../lib/concurrencyConflict';
 
 /**
  * Instancia única de Axios (patrón Adapter/Proxy, Sección 6). Aísla al resto de
@@ -36,6 +37,13 @@ apiClient.interceptors.response.use(
 function normalizeError(error: AxiosError<ApiError>): ApiError {
   const data = error.response?.data;
   if (data && typeof data === 'object' && typeof data.message === 'string') {
+    // ApiErrorResponse no trae un código de error propio, así que este caso
+    // puntual (choque de bloqueo optimista) solo se distingue por su mensaje
+    // exacto. Se avisa también por evento global para que se muestre como
+    // alerta aunque la pantalla que disparó la escritura no maneje toasts.
+    if (isConcurrencyConflictError(error.response?.status, data.message)) {
+      window.dispatchEvent(new CustomEvent(CONCURRENCY_CONFLICT_EVENT, { detail: data.message }));
+    }
     return data;
   }
   // Sin respuesta del backend (red caída, timeout, CORS, etc.): nunca se expone

@@ -19,7 +19,7 @@ La aplicación cubre el ciclo completo de un negocio minorista con varias sucurs
 | Base de datos | PostgreSQL 16 |
 | Infraestructura | Docker Compose |
 
-Arquitectura de 3 capas físicamente separadas. El frontend se comunica con el backend exclusivamente por la API REST `/api/v1`; no hay lógica de negocio en el cliente. El backend sigue una organización **package-by-feature** (cada dominio —`producto`, `venta`, `transferencia`, etc.— agrupa sus propios `controller`, `service`, `repository`, `entity` y `dto`) en vez de agrupar por capa técnica, para que el código relacionado con una misma funcionalidad viva junto.
+Arquitectura de 3 capas físicamente separadas. El frontend se comunica con el backend exclusivamente por la API REST `/api/v1`; no hay lógica de negocio en el cliente. Tanto el backend como el frontend siguen una organización **package-by-feature** (cada dominio de negocio —`producto`, `venta`, `transferencia`, etc.— agrupa su propio código en vez de dispersarse por capa técnica), para que el código relacionado con una misma funcionalidad viva junto. En el backend cada paquete agrupa `controller`, `service`, `repository`, `entity` y `dto`; en el frontend cada `features/<dominio>/` agrupa su `api`, `hooks`, `types` y `pages`, dejando en `shared/` solo lo transversal (componentes UI genéricos, cliente HTTP, utilidades). Beneficios frente a organizar por capa: mayor cohesión (lo que cambia junto vive junto), menos archivos a tocar por feature, fronteras de dominio más claras y mejor escalabilidad a medida que crecen los módulos.
 
 ## Arquitectura
 
@@ -157,16 +157,31 @@ npm run dev   # http://localhost:5173, proxy de Vite hacia el backend
 │   ├── package.json / vite.config.ts / tailwind.config.js / tsconfig.json
 │   └── src/
 │       ├── main.tsx, App.tsx
-│       ├── api/          # 1 archivo por dominio (transferencias.ts, ventas.ts, ...) + client.ts (Axios + interceptor JWT)
-│       ├── hooks/        # 1 hook de datos por listado/recurso (useTransferenciasList, useMutation, ...)
-│       ├── types/        # tipos TS que reflejan los DTO del backend, 1 archivo por dominio
-│       ├── pages/        # 1 página por módulo (TransferenciasPage, VentasPage, DashboardPage, ...)
-│       ├── components/
-│       │   └── ui/       # kit de componentes propio (Button, Card, DataTable, Modal, Select, ...)
-│       ├── routes/       # PrivateRoute (requiere JWT), RoleGuard (requiere rol)
-│       ├── context/      # AuthContext, ToastContext
-│       ├── lib/          # helpers (format.ts, cn.ts)
-│       └── test/         # setup de Vitest + Testing Library
+│       │
+│       │   # --- un paquete por dominio de negocio (package-by-feature) ---
+│       │   # cada uno con su propio api/hooks/types/pages, salvo excepciones anotadas abajo:
+│       ├── features/
+│       │   ├── auth/          {api, hooks, context, routes, pages, types}   # login, sesión JWT, PrivateRoute/RoleGuard
+│       │   ├── dashboard/      {api, hooks, pages, types}
+│       │   ├── productos/      {api, hooks, pages, types}
+│       │   ├── compras/        {api, hooks, pages, types}                   # incluye proveedores.ts
+│       │   ├── ventas/         {api, hooks, pages, types}                   # incluye priceLists.ts
+│       │   ├── inventario/     {api, hooks, pages, types}                   # stock por sucursal + movimientos
+│       │   ├── logistica/      {api, hooks, pages, types}
+│       │   ├── transferencias/ {api, hooks, pages, types}                   # máquina de estados (Módulo 4)
+│       │   ├── rebalanceo/     {api, hooks, types}                          # sin pages propias: se consume desde dashboard
+│       │   ├── usuarios/       {api, hooks, types}                          # sin pages propias: se consume desde admin
+│       │   ├── sucursales/     {api, hooks, types}                         # sin pages propias: se consume desde varias features
+│       │   └── admin/          {pages}                                      # compone usuarios + sucursales
+│       ├── shared/        # código transversal sin dueño de un solo dominio
+│       │   ├── api/       client.ts (Axios + interceptor JWT)
+│       │   ├── components/
+│       │   │   └── ui/    # kit de componentes propio (Button, Card, DataTable, Modal, Select, ...)
+│       │   ├── context/   # ToastContext
+│       │   ├── hooks/     # useMutation
+│       │   ├── lib/       # helpers (format.ts, cn.ts)
+│       │   └── types/     # api.ts (ApiError, PageResponse)
+│       └── test/          # setup de Vitest + Testing Library
 │
 └── graphify-out/          # grafo de conocimiento del repo (generado, no se versiona a mano)
 ```

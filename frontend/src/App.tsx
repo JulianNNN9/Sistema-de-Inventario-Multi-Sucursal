@@ -1,19 +1,19 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { AuthProvider } from './context/AuthContext';
-import { ToastProvider } from './context/ToastContext';
-import { AdminPage } from './pages/AdminPage';
-import { ComprasPage } from './pages/ComprasPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { InventarioPage } from './pages/InventarioPage';
-import { LoginPage } from './pages/LoginPage';
-import { LogisticaPage } from './pages/LogisticaPage';
-import { NotAuthorizedPage } from './pages/NotAuthorizedPage';
-import { ProductosPage } from './pages/ProductosPage';
-import { TransferenciasPage } from './pages/TransferenciasPage';
-import { VentasPage } from './pages/VentasPage';
-import { PrivateRoute } from './routes/PrivateRoute';
-import { RoleGuard } from './routes/RoleGuard';
+import { Layout } from './shared/components/Layout';
+import { AuthProvider } from './features/auth/context/AuthContext';
+import { ToastProvider } from './shared/context/ToastContext';
+import { AdminPage } from './features/admin/pages/AdminPage';
+import { ComprasPage } from './features/compras/pages/ComprasPage';
+import { DashboardPage } from './features/dashboard/pages/DashboardPage';
+import { InventarioPage } from './features/inventario/pages/InventarioPage';
+import { LoginPage } from './features/auth/pages/LoginPage';
+import { LogisticaPage } from './features/logistica/pages/LogisticaPage';
+import { NotAuthorizedPage } from './features/auth/pages/NotAuthorizedPage';
+import { ProductosPage } from './features/productos/pages/ProductosPage';
+import { TransferenciasPage } from './features/transferencias/pages/TransferenciasPage';
+import { VentasPage } from './features/ventas/pages/VentasPage';
+import { PrivateRoute } from './features/auth/routes/PrivateRoute';
+import { RoleGuard } from './features/auth/routes/RoleGuard';
 
 export default function App() {
   return (

@@ -19,9 +19,9 @@ La aplicación cubre el ciclo completo de un negocio minorista con varias sucurs
 | Base de datos | PostgreSQL 16 |
 | Infraestructura | Docker Compose |
 
-Arquitectura de 3 capas físicamente separadas. El frontend se comunica con el backend exclusivamente por la API REST `/api/v1`; no hay lógica de negocio en el cliente. El backend sigue una organización **package-by-feature** (cada dominio —`producto`, `venta`, `transferencia`, etc.— agrupa sus propios `controller`, `service`, `repository`, `entity` y `dto`) en vez de agrupar por capa técnica, para que el código relacionado con una misma funcionalidad viva junto.
-
 ## Arquitectura
+
+Arquitectura de 3 capas físicamente separadas. El frontend se comunica con el backend exclusivamente por la API REST `/api/v1`; no hay lógica de negocio en el cliente. El backend sigue una organización **package-by-feature** (cada dominio —`producto`, `venta`, `transferencia`, etc.— agrupa sus propios `controller`, `service`, `repository`, `entity` y `dto`) en vez de agrupar por capa técnica, para que el código relacionado con una misma funcionalidad viva junto.
 
 ### Contenedores y flujo de una petición
 

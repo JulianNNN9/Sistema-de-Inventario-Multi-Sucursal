@@ -2,7 +2,9 @@ package com.optiplant.inventario.logistica.service;
 
 import com.optiplant.inventario.logistica.dto.ComplianceReportResponse;
 import com.optiplant.inventario.logistica.dto.ComplianceReportRow;
+import com.optiplant.inventario.security.CurrentUser;
 import com.optiplant.inventario.transferencia.repository.TransferenciaRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,8 +35,16 @@ class LogisticaServiceTest {
     @Mock
     private TransferenciaRepository transferenciaRepository;
 
+    @Mock
+    private CurrentUser currentUser;
+
     @InjectMocks
     private LogisticaService logisticaService;
+
+    @BeforeEach
+    void adminVeTodasLasSucursales() {
+        when(currentUser.isAdmin()).thenReturn(true);
+    }
 
     private ComplianceReportRow fila(Long sucursalId, String sucursal, String transportista,
                                       Long cantidad, Double desviacion) {

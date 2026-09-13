@@ -19,9 +19,9 @@ La aplicación cubre el ciclo completo de un negocio minorista con varias sucurs
 | Base de datos | PostgreSQL 16 |
 | Infraestructura | Docker Compose |
 
-Arquitectura de 3 capas físicamente separadas. El frontend se comunica con el backend exclusivamente por la API REST `/api/v1`; no hay lógica de negocio en el cliente. Tanto el backend como el frontend siguen una organización **package-by-feature** (cada dominio de negocio —`producto`, `venta`, `transferencia`, etc.— agrupa su propio código en vez de dispersarse por capa técnica), para que el código relacionado con una misma funcionalidad viva junto. En el backend cada paquete agrupa `controller`, `service`, `repository`, `entity` y `dto`; en el frontend cada `features/<dominio>/` agrupa su `api`, `hooks`, `types` y `pages`, dejando en `shared/` solo lo transversal (componentes UI genéricos, cliente HTTP, utilidades). Beneficios frente a organizar por capa: mayor cohesión (lo que cambia junto vive junto), menos archivos a tocar por feature, fronteras de dominio más claras y mejor escalabilidad a medida que crecen los módulos.
-
 ## Arquitectura
+
+Arquitectura de 3 capas físicamente separadas. El frontend se comunica con el backend exclusivamente por la API REST `/api/v1`; no hay lógica de negocio en el cliente. Tanto el backend como el frontend siguen una organización **package-by-feature** (cada dominio de negocio —`producto`, `venta`, `transferencia`, etc.— agrupa su propio código en vez de dispersarse por capa técnica), para que el código relacionado con una misma funcionalidad viva junto. En el backend cada paquete agrupa `controller`, `service`, `repository`, `entity` y `dto`; en el frontend cada `features/<dominio>/` agrupa su `api`, `hooks`, `types` y `pages`, dejando en `shared/` solo lo transversal (componentes UI genéricos, cliente HTTP, utilidades). Beneficios frente a organizar por capa: mayor cohesión (lo que cambia junto vive junto), menos archivos a tocar por feature, fronteras de dominio más claras y mejor escalabilidad a medida que crecen los módulos.
 
 ### Contenedores y flujo de una petición
 

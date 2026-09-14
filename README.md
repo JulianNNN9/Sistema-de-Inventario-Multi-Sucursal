@@ -39,7 +39,7 @@ Navegador
   │  JwtAuthenticationFilter → @PreAuthorize (rol) → CurrentUser.assertPuedeOperarSobreSucursal (sucursal)
   │  Controller → Service (reglas de negocio + transacción) → Repository (Spring Data JPA)
   ▼
-[db] PostgreSQL 16 — esquema versionado por Flyway (V1..V19 al arrancar)
+[db] PostgreSQL 16 — esquema versionado por Flyway (V1..V18 al arrancar) + seed opcional (SeedDataRunner)
 ```
 
 Nginx nunca expone el backend directamente al navegador: todo `/api/*` se resuelve dentro de la red de Docker (`proxy_pass http://backend:8080`), así que en producción solo haría falta exponer el puerto del frontend.
@@ -126,7 +126,7 @@ npm run dev   # http://localhost:5173, proxy de Vite hacia el backend
 │       │   │   ├── common/
 │       │   │   │   ├── dto/            # ApiErrorResponse, PageResponse<T> (paginación uniforme, RNF-01)
 │       │   │   │   └── exception/      # GlobalExceptionHandler + excepciones de negocio (una por caso)
-│       │   │   ├── config/             # SecurityConfig, JacksonConfig, OpenApiConfig, RoleDescriptionOperationCustomizer
+│       │   │   ├── config/             # SecurityConfig, JacksonConfig, OpenApiConfig, RoleDescriptionOperationCustomizer, SeedDataRunner
 │       │   │   ├── security/
 │       │   │   │   ├── auth/           # AuthController, AuthService, dto/  (POST /api/v1/auth/login, /logout)
 │       │   │   │   ├── JwtService.java, JwtAuthenticationFilter.java, JwtPrincipal.java
@@ -149,7 +149,8 @@ npm run dev   # http://localhost:5173, proxy de Vite hacia el backend
 │       │   │   └── rebalanceo/    {controller, service, dto, strategy}              # strategy/: RebalanceoStrategy + DeficitSuperavitStrategy
 │       │   └── resources/
 │       │       ├── application.yml
-│       │       └── db/migration/        # scripts Flyway versionados V1..V19 (naming Flyway estándar)
+│       │       ├── db/migration/        # scripts Flyway versionados V1..V18 (naming Flyway estándar)
+│       │       └── seed/ferreteria.sql   # datos de prueba opcionales, cargados por SeedDataRunner (no es una migración Flyway)
 │       └── test/java/com/optiplant/inventario/...   # JUnit 5 + Mockito, misma estructura de paquetes por dominio
 │
 ├── frontend/
@@ -219,7 +220,7 @@ Todos los módulos del alcance funcional están completos, con backend, tests y 
 
 ```bash
 cd backend && mvn test    # 113 tests (JUnit 5 + Mockito)
-cd frontend && npm test   # 4 tests (Vitest + Testing Library)
+cd frontend && npm test   # 9 tests (Vitest + Testing Library)
 ```
 
 Cada módulo se validó, además de con estos tests unitarios, contra una instancia real de PostgreSQL levantada con `docker compose` (migraciones Flyway reales, datos reales, llamadas HTTP con `curl` incluyendo casos de error y restricciones de rol).

@@ -51,4 +51,13 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sucursal_id")
     private Sucursal sucursal;
+
+    /**
+     * Contador de versión de token (mitigación de robo/fuga de JWT): el JWT
+     * lleva este valor como claim; si no coincide con el valor actual aquí,
+     * {@code JwtAuthenticationFilter} rechaza la petición aunque el token no
+     * haya expirado. Se incrementa en {@code POST /api/v1/auth/logout}.
+     */
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion;
 }

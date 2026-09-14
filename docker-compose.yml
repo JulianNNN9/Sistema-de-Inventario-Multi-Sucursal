@@ -28,6 +28,11 @@ services:
       # docker-entrypoint.sh genera uno con `openssl rand` en el primer
       # arranque y lo persiste en el volumen `jwt_secret` (ver README).
       JWT_SECRET: ${JWT_SECRET:-}
+      # SEED_DATA=false levanta el sistema con la base de datos vacía (sin el
+      # seed de demo/QA de ferretería); por defecto activo para que
+      # `docker compose up` siga funcionando igual que siempre sin configurar
+      # nada (ver SeedDataRunner y README).
+      APP_SEED_ENABLED: ${SEED_DATA:-true}
     volumes:
       - jwt_secret:/secrets
     ports:

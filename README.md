@@ -81,7 +81,7 @@ No se requiere configuración manual: `docker-compose.yml` incluye valores por d
 
 Desde esa cuenta se pueden crear el resto de usuarios (`GERENTE_SUCURSAL`, `OPERADOR_INVENTARIO`) y sucursales vía la sección de Administración de la aplicación.
 
-Además, el proyecto ya arranca con datos de prueba completos del dominio "ferretería" (4 sucursales, 9 usuarios, 28 productos, compras, ventas, transferencias en todos sus estados y sugerencias de rebalanceo reales) — ver la migración `V19__seed_ferreteria.sql` para el detalle completo y las credenciales de los otros 8 usuarios (contraseña uniforme `Test123!`).
+Además, el proyecto ya arranca con datos de prueba completos del dominio "ferretería" (4 sucursales, 9 usuarios, 28 productos, compras, ventas, transferencias en todos sus estados y sugerencias de rebalanceo reales) — ver `backend/src/main/resources/seed/ferreteria.sql` para el detalle completo y las credenciales de los otros 8 usuarios (contraseña uniforme `Test123!`). Este seed ya no es una migración Flyway: lo carga `SeedDataRunner` al arrancar la aplicación (verificando antes si ya existen esos datos, para que reiniciar el contenedor sobre un volumen ya sembrado no falle por duplicados) y está activo por defecto. Para levantar el sistema con la base de datos vacía, definir `SEED_DATA=false` en `.env` (ver `.env.example`) antes de `docker compose up`.
 
 **Documentación interactiva de la API**: con el backend corriendo, Swagger UI queda disponible en `http://localhost:8080/swagger-ui.html` (usa el botón "Authorize" con el token de `POST /api/v1/auth/login`). El spec OpenAPI se sirve en vivo en `http://localhost:8080/v3/api-docs`.
 

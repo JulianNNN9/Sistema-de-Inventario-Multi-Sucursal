@@ -1,11 +1,14 @@
--- Módulo 9 · Fase B — datos de prueba del dominio "ferretería" para QA manual
--- y demos, sin ningún paso adicional a `docker compose up` sobre un volumen
--- limpio (Sección 1, regla global 4). El ADMIN_GENERAL sembrado en
--- V3__seed_admin.sql se conserva tal cual (no se duplica un segundo admin
--- genérico): esta migración solo agrega los otros 8 usuarios y el resto de
--- datos temáticos, de modo que el sistema queda con exactamente 9 usuarios.
+-- Datos de prueba del dominio "ferretería" para QA manual y demos. Ya no es
+-- una migración Flyway (ver SeedDataRunner): se ejecuta al arrancar la
+-- aplicación, condicionado a app.seed.enabled (por defecto activo, así que
+-- `docker compose up` sigue funcionando igual que antes sin pasos extra), y
+-- SeedDataRunner ya verifica antes si los datos existen para no duplicarlos.
+-- El ADMIN_GENERAL sembrado en V3__seed_admin.sql se conserva tal cual (no se
+-- duplica un segundo admin genérico): este script solo agrega los otros 8
+-- usuarios y el resto de datos temáticos, de modo que el sistema queda con
+-- exactamente 9 usuarios.
 --
--- Contraseña de prueba uniforme para los 8 usuarios de esta migración:
+-- Contraseña de prueba uniforme para los 8 usuarios de este script:
 -- Test123!  →  BCrypt (cost 10), generado y verificado con BCryptPasswordEncoder.
 -- Ver docs/DATOS_DE_PRUEBA.md para el detalle de credenciales y del
 -- déficit/superávit sembrado a propósito para el recomendador de rebalanceo.

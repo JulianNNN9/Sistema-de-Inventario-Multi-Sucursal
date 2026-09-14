@@ -37,11 +37,9 @@ apiClient.interceptors.response.use(
 function normalizeError(error: AxiosError<ApiError>): ApiError {
   const data = error.response?.data;
   if (data && typeof data === 'object' && typeof data.message === 'string') {
-    // ApiErrorResponse no trae un código de error propio, así que este caso
-    // puntual (choque de bloqueo optimista) solo se distingue por su mensaje
-    // exacto. Se avisa también por evento global para que se muestre como
-    // alerta aunque la pantalla que disparó la escritura no maneje toasts.
-    if (isConcurrencyConflictError(error.response?.status, data.message)) {
+    // Se avisa también por evento global para que se muestre como alerta
+    // aunque la pantalla que disparó la escritura no maneje toasts.
+    if (isConcurrencyConflictError(error.response?.status, data.code)) {
       window.dispatchEvent(new CustomEvent(CONCURRENCY_CONFLICT_EVENT, { detail: data.message }));
     }
     return data;

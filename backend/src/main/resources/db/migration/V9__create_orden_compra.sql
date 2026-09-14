@@ -7,6 +7,7 @@ CREATE TABLE orden_compra (
     fecha        TIMESTAMP WITH TIME ZONE NOT NULL,
     estado       VARCHAR(20) NOT NULL,
     plazo_pago   VARCHAR(60),
+    version      BIGINT      NOT NULL DEFAULT 0,
     CONSTRAINT chk_orden_compra_estado
         CHECK (estado IN ('PENDIENTE', 'RECIBIDA', 'CANCELADA'))
 );

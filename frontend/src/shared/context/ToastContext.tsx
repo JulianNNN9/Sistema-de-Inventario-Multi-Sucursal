@@ -41,8 +41,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showError = useCallback((message: string) => push('error', message), [push]);
 
   // El cliente Axios (fuera del árbol de React) dispara este evento cuando
-  // una escritura choca con el bloqueo optimista de InventarioSucursal, para
-  // que la alerta se vea sin importar si la pantalla que la originó usa
+  // una escritura choca con el bloqueo optimista de cualquier entidad (@Version),
+  // para que la alerta se vea sin importar si la pantalla que la originó usa
   // toasts o no.
   useEffect(() => {
     function handleConcurrencyConflict(event: Event) {

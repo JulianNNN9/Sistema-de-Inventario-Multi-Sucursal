@@ -134,7 +134,8 @@ public class GlobalExceptionHandler {
                                                                      HttpServletRequest request) {
         log.warn("Conflicto de bloqueo optimista en {}", request.getRequestURI(), ex);
         return build(HttpStatus.CONFLICT,
-                "El inventario fue modificado por otra operación al mismo tiempo. Intenta nuevamente.", request);
+                "Este registro fue modificado por otra persona al mismo tiempo. Actualiza la información e intenta nuevamente.",
+                request, "CONCURRENCY_CONFLICT");
     }
 
     @ExceptionHandler(Exception.class)
@@ -153,8 +154,13 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ApiErrorResponse> build(HttpStatus status, String message,
                                                    HttpServletRequest request) {
+        return build(status, message, request, null);
+    }
+
+    private ResponseEntity<ApiErrorResponse> build(HttpStatus status, String message,
+                                                   HttpServletRequest request, String code) {
         return ResponseEntity.status(status).body(
                 ApiErrorResponse.of(status.value(), status.getReasonPhrase(), message,
-                        request.getRequestURI()));
+                        request.getRequestURI(), code));
     }
 }

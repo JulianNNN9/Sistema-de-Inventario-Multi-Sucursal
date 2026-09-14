@@ -15,6 +15,7 @@ CREATE TABLE transferencia (
     transportista          VARCHAR(120),
     fecha_estimada_llegada TIMESTAMP WITH TIME ZONE,
     fecha_real_llegada     TIMESTAMP WITH TIME ZONE,
+    version                BIGINT        NOT NULL DEFAULT 0,
     CONSTRAINT chk_transferencia_estado CHECK (estado IN (
         'PENDIENTE', 'RECHAZADA', 'EN_TRANSITO', 'COMPLETADA', 'CON_FALTANTES',
         'REENVIO_SOLICITADO', 'CERRADA_AJUSTE', 'CERRADA_RECLAMACION')),

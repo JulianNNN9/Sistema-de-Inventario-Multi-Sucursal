@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -62,6 +63,10 @@ public class OrdenCompra {
     @Builder.Default
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrdenCompraDetalle> detalles = new ArrayList<>();
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     /** Agrega una línea manteniendo ambos lados de la relación sincronizados. */
     public void addDetalle(OrdenCompraDetalle detalle) {

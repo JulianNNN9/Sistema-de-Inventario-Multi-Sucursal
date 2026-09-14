@@ -6,20 +6,28 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * Formato de error estándar de la API (Sección 5 del roadmap). El campo
- * {@code message} siempre es específico al caso, nunca genérico.
+ * {@code message} siempre es específico al caso, nunca genérico. {@code code}
+ * es opcional (null salvo casos puntuales, como CONCURRENCY_CONFLICT) y
+ * existe para que el cliente distinga programáticamente un caso concreto de
+ * un 409 sin depender del texto exacto del mensaje.
  */
 public record ApiErrorResponse(
         String timestamp,
         int status,
         String error,
         String message,
-        String path
+        String path,
+        String code
 ) {
 
     private static final DateTimeFormatter ISO_UTC =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC);
 
     public static ApiErrorResponse of(int status, String error, String message, String path) {
-        return new ApiErrorResponse(ISO_UTC.format(Instant.now()), status, error, message, path);
+        return of(status, error, message, path, null);
+    }
+
+    public static ApiErrorResponse of(int status, String error, String message, String path, String code) {
+        return new ApiErrorResponse(ISO_UTC.format(Instant.now()), status, error, message, path, code);
     }
 }

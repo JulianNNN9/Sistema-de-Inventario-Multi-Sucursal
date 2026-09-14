@@ -6,6 +6,10 @@ CREATE TABLE usuario (
     password_hash VARCHAR(255) NOT NULL,
     rol           VARCHAR(30)  NOT NULL,
     sucursal_id   BIGINT       REFERENCES sucursal (id),
+    -- Contador de versión de token (mitigación de robo/fuga de JWT): se
+    -- incrementa en cada logout, invalidando de inmediato cualquier token ya
+    -- emitido con una versión anterior aunque no haya expirado.
+    token_version INT          NOT NULL DEFAULT 0,
     CONSTRAINT chk_usuario_rol
         CHECK (rol IN ('ADMIN_GENERAL', 'GERENTE_SUCURSAL', 'OPERADOR_INVENTARIO')),
     -- sucursal_id es NULL únicamente para ADMIN_GENERAL (Sección 3)

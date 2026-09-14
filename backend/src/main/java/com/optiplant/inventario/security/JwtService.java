@@ -16,7 +16,8 @@ import java.util.Date;
 
 /**
  * Generación y validación de JWT firmados con HS256 (Sección 4.1).
- * Claims: {@code sub} (usuario id), {@code rol}, {@code sucursalId}, {@code iat}, {@code exp}.
+ * Claims: {@code sub} (usuario id), {@code rol}, {@code sucursalId},
+ * {@code tokenVersion}, {@code iat}, {@code exp}.
  */
 @Service
 public class JwtService {
@@ -37,6 +38,7 @@ public class JwtService {
                 .subject(String.valueOf(usuario.getId()))
                 .claim("rol", usuario.getRol().name())
                 .claim("sucursalId", sucursalId)
+                .claim("tokenVersion", usuario.getTokenVersion())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expirationMillis)))
                 .signWith(key, Jwts.SIG.HS256)

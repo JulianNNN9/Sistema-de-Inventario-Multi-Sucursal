@@ -22,6 +22,7 @@ class JwtServiceTest {
         Usuario usuario = Usuario.builder()
                 .id(42L).nombre("Ana").email("ana@optiplant.local")
                 .passwordHash("hash").rol(Rol.GERENTE_SUCURSAL).sucursal(sucursal)
+                .tokenVersion(3)
                 .build();
 
         String token = jwtService.generateToken(usuario);
@@ -30,6 +31,7 @@ class JwtServiceTest {
         assertEquals("42", claims.getSubject());
         assertEquals("GERENTE_SUCURSAL", claims.get("rol", String.class));
         assertEquals(7L, claims.get("sucursalId", Number.class).longValue());
+        assertEquals(3, claims.get("tokenVersion", Number.class).intValue());
         assertTrue(claims.getIssuedAt().before(claims.getExpiration()));
         assertTrue(jwtService.isTokenValid(token));
     }

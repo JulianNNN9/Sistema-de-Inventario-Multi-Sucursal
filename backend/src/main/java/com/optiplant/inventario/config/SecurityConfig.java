@@ -4,6 +4,7 @@ import com.optiplant.inventario.security.JwtAuthenticationFilter;
 import com.optiplant.inventario.security.JwtService;
 import com.optiplant.inventario.security.RestAccessDeniedHandler;
 import com.optiplant.inventario.security.RestAuthenticationEntryPoint;
+import com.optiplant.inventario.usuario.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +36,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtService jwtService;
+    private final UsuarioRepository usuarioRepository;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
 
@@ -61,7 +63,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
-                .addFilterBefore(new JwtAuthenticationFilter(jwtService),
+                .addFilterBefore(new JwtAuthenticationFilter(jwtService, usuarioRepository),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

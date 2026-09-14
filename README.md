@@ -46,8 +46,9 @@ Nginx nunca expone el backend directamente al navegador: todo `/api/*` se resuel
 
 ### Seguridad (JWT + autorización por rol y por sucursal)
 
-- **Autenticación sin estado**: `POST /api/v1/auth/login` devuelve un JWT (HS256, 8h de expiración) con `sub` (id de usuario), `rol` y `sucursalId` como claims; no hay sesiones en el servidor (`SessionCreationPolicy.STATELESS`).
+- **Autenticación sin estado**: `POST /api/v1/auth/login` devuelve un JWT (HS256, 8h de expiración) con `sub` (id de usuario), `rol`, `sucursalId` y `tokenVersion` como claims; no hay sesiones en el servidor (`SessionCreationPolicy.STATELESS`).
 - **`JwtAuthenticationFilter`** se inserta en la cadena de filtros de Spring Security antes del filtro usuario/contraseña (patrón Chain of Responsibility) y puebla el `SecurityContext` a partir del token.
+- **Invalidación de tokens (mitigación de robo/fuga)**: cada usuario tiene un contador `token_version` en base de datos. `JwtAuthenticationFilter` compara el `tokenVersion` del claim contra ese valor actual en cada petición y rechaza la autenticación si no coinciden, igual que un token inválido. `POST /api/v1/auth/logout` (autenticado) incrementa ese contador, invalidando de inmediato *todos* los tokens ya emitidos para ese usuario sin esperar a que expiren por sí solos (hasta 8h). El costo es una consulta a `usuario` por petición autenticada, a cambio de revocabilidad real sobre un esquema que de otro modo sería JWT puro sin estado.
 - **Autorización en dos capas, nunca solo una**: el `@PreAuthorize("hasAnyRole(...)")` en cada endpoint del `Controller` decide *qué rol* puede llamar la operación; el `Service` vuelve a verificar con `CurrentUser.assertPuedeOperarSobreSucursal(...)` que el usuario no-admin solo opera sobre *su propia sucursal* — un rol correcto no basta si la sucursal del recurso no es la suya.
 - **Secreto JWT (RNF-02)**: no vive hardcodeado en el repo; ver la decisión de diseño correspondiente más abajo.
 
@@ -127,7 +128,7 @@ npm run dev   # http://localhost:5173, proxy de Vite hacia el backend
 │       │   │   │   └── exception/      # GlobalExceptionHandler + excepciones de negocio (una por caso)
 │       │   │   ├── config/             # SecurityConfig, JacksonConfig, OpenApiConfig, RoleDescriptionOperationCustomizer
 │       │   │   ├── security/
-│       │   │   │   ├── auth/           # AuthController, AuthService, dto/  (POST /api/v1/auth/login)
+│       │   │   │   ├── auth/           # AuthController, AuthService, dto/  (POST /api/v1/auth/login, /logout)
 │       │   │   │   ├── JwtService.java, JwtAuthenticationFilter.java, JwtPrincipal.java
 │       │   │   │   ├── CurrentUser.java            # alcance por sucursal (assertPuedeOperarSobreSucursal)
 │       │   │   │   ├── UsuarioDetailsService.java
@@ -212,11 +213,12 @@ Todos los módulos del alcance funcional están completos, con backend, tests y 
 - **PostgreSQL y parámetros nulos**: los filtros opcionales en consultas JPQL usan el idioma `coalesce(:param, columna)` en vez de `:param IS NULL`, evitando un error real de inferencia de tipos de PostgreSQL con parámetros nulos aislados (detectado y corregido durante el desarrollo).
 - **Documentación de roles en OpenAPI (Módulo 9)**: un `OperationCustomizer` (`RoleDescriptionOperationCustomizer`) lee en tiempo real la anotación `@PreAuthorize` real de cada endpoint y la traduce a una descripción en español dentro del spec — la documentación de "qué rol puede usar este endpoint" nunca puede desincronizarse de la autorización efectiva, porque se genera a partir de ella.
 - **Secreto JWT sin hardcodear (RNF-02)**: ni `docker-compose.yml` ni `application.yml` tienen un valor de secreto legible (el placeholder `dev_jwt_secret_change_me_...` que existía antes quedaba comprometido por estar en el repo, aunque fuera "solo para dev"). En su lugar, `backend/docker-entrypoint.sh` revisa si `JWT_SECRET` llegó por entorno; si no, genera uno aleatorio con `openssl rand -hex 32` la primera vez que arranca el contenedor y lo persiste en el volumen Docker `jwt_secret` (así un simple `docker compose restart backend` no invalida todos los tokens ya emitidos; solo un `docker compose down -v` lo regenera, igual que pasa con `pgdata`). Esto no rompe RT-03 ("un solo comando, sin configuración manual"): `docker compose up` sigue siendo suficiente, el secreto simplemente se genera solo en vez de venir fijo en el repo. `application.yml` tampoco tiene fallback: `${JWT_SECRET}` sin default, a propósito, para que arrancar el backend fuera de Docker sin definir la variable falle rápido en vez de firmar tokens silenciosamente con un secreto público conocido.
+- **Invalidación de JWT vía contador de versión**: un JWT firmado es válido hasta que expira (8h) aunque el servidor "olvide" haberlo emitido — no hay forma de revocarlo antes de tiempo en un esquema stateless puro, lo que es un problema real si un token se filtra o roba. Se agrega `usuario.token_version` (entero, default 0) como mitigación de bajo costo: se incluye como claim adicional al firmar el token, `JwtAuthenticationFilter` lo compara contra el valor actual en base de datos en cada petición y rechaza la autenticación si no coincide, y `POST /api/v1/auth/logout` simplemente incrementa el contador. No es logout selectivo por dispositivo/sesión (invalida *todos* los tokens del usuario a la vez, no solo el que cierra sesión) ni requiere una tabla de tokens revocados; a cambio, agrega una consulta a `usuario` por petición autenticada — un costo aceptado deliberadamente porque prioriza revocación real sobre estado 100% sin BD.
 
 ## Tests
 
 ```bash
-cd backend && mvn test    # 108 tests (JUnit 5 + Mockito)
+cd backend && mvn test    # 113 tests (JUnit 5 + Mockito)
 cd frontend && npm test   # 4 tests (Vitest + Testing Library)
 ```
 

@@ -3,7 +3,8 @@
 CREATE TABLE lista_precio (
     id          BIGSERIAL PRIMARY KEY,
     nombre      VARCHAR(120) NOT NULL,
-    sucursal_id BIGINT REFERENCES sucursal (id)
+    sucursal_id BIGINT REFERENCES sucursal (id),
+    version     BIGINT       NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_lista_precio_sucursal_id ON lista_precio (sucursal_id);

@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,4 +54,8 @@ public class ListaPrecio {
         detalles.add(detalle);
         detalle.setLista(this);
     }
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 }

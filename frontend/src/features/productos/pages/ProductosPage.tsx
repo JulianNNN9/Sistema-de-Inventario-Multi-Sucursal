@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   Button,
@@ -9,6 +9,7 @@ import {
   Modal,
   PageHeader,
   Pagination,
+  Select,
   type Column,
 } from '../../../shared/components/ui';
 import { ErrorAlert } from '../../../shared/components/ErrorAlert';
@@ -17,9 +18,11 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { useProductos } from '../hooks/useProductos';
 import { useMutation } from '../../../shared/hooks/useMutation';
 import { useToast } from '../../../shared/context/ToastContext';
+import { UNIDADES_MEDIDA_OPTIONS } from '../constants/unidadesMedida';
 import type { Producto } from '../types/producto';
 
 const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function ProductosPage() {
   const { rol } = useAuth();
@@ -28,8 +31,18 @@ export function ProductosPage() {
   const canManage = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL';
 
   const [page, setPage] = useState(0);
-  const { data, loading, error, refetch } = useProductos({ page, size: PAGE_SIZE });
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const { data, loading, error, refetch } = useProductos({ page, size: PAGE_SIZE, search: search || undefined });
   const { showSuccess, showError } = useToast();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(0);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Producto | null>(null);
@@ -135,6 +148,14 @@ export function ProductosPage() {
 
       {error && <ErrorAlert message={error} />}
 
+      <Input
+        aria-label="Buscar por SKU o nombre"
+        placeholder="Buscar por SKU o nombre…"
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        className="max-w-sm"
+      />
+
       <DataTable
         columns={columns}
         rows={data?.content ?? []}
@@ -198,13 +219,14 @@ export function ProductosPage() {
             onChange={(e) => setNombre(e.target.value)}
             required
           />
-          <Input
+          <Select
             label="Unidad de medida base"
-            hint="Unidad en la que se controla el inventario (ej. unidad, kg, litro)."
+            hint="Unidad en la que se controla el inventario."
             value={unidad}
             onChange={(e) => setUnidad(e.target.value)}
             required
-            placeholder="unidad, kg, litro…"
+            placeholder="Selecciona una unidad…"
+            options={UNIDADES_MEDIDA_OPTIONS}
           />
         </form>
       </Modal>

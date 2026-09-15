@@ -126,6 +126,30 @@ class CompraServiceTest {
     }
 
     @Test
+    void crear_conDescuento_aplicaDescuentoAlSubtotalYAlTotal() {
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(proveedorService.getEntityById(1L)).thenReturn(proveedor);
+        when(sucursalService.getEntityById(1L)).thenReturn(sucursal);
+        when(productoService.getEntityById(10L)).thenReturn(productoA);
+        when(ordenCompraRepository.save(any(OrdenCompra.class))).thenAnswer(i -> {
+            OrdenCompra o = i.getArgument(0);
+            o.setId(77L);
+            return o;
+        });
+
+        // cantidad 5 * precio 200 = 1000 bruto; 20% de descuento -> 800 neto.
+        PurchaseOrderRequest request = new PurchaseOrderRequest(
+                1L, 1L,
+                List.of(new PurchaseOrderLineRequest(10L, new BigDecimal("5"), new BigDecimal("200"),
+                        new BigDecimal("20"))));
+
+        PurchaseOrderResponse response = compraService.crear(request);
+
+        assertEquals(0, response.lineas().get(0).subtotal().compareTo(new BigDecimal("800.00")));
+        assertEquals(0, response.total().compareTo(new BigDecimal("800.00")));
+    }
+
+    @Test
     void confirmarRecepcion_ordenNoPendiente_lanzaConflictoYNoTocaInventario() {
         when(ordenCompraRepository.findById(99L)).thenReturn(Optional.of(ordenPendiente(EstadoOrdenCompra.RECIBIDA)));
         when(currentUser.isAdmin()).thenReturn(true);
@@ -150,9 +174,9 @@ class CompraServiceTest {
         verify(inventarioService, times(2))
                 .registrarIngresoPorCompra(any(), eq(sucursal), any(), any(), eq(7L));
         verify(inventarioService).registrarIngresoPorCompra(
-                eq(productoA), eq(sucursal), eq(new BigDecimal("5")), eq(new BigDecimal("100")), eq(7L));
+                eq(productoA), eq(sucursal), eq(new BigDecimal("5")), eq(new BigDecimal("100.00")), eq(7L));
         verify(inventarioService).registrarIngresoPorCompra(
-                eq(productoB), eq(sucursal), eq(new BigDecimal("3")), eq(new BigDecimal("50")), eq(7L));
+                eq(productoB), eq(sucursal), eq(new BigDecimal("3")), eq(new BigDecimal("50.00")), eq(7L));
     }
 
     @Test
@@ -167,5 +191,48 @@ class CompraServiceTest {
         when(currentUser.sucursalId()).thenReturn(1L);
 
         assertThrows(RecursoNoEncontradoException.class, () -> compraService.confirmarRecepcion(99L));
+    }
+
+    @Test
+    void confirmarRecepcion_conDescuento_registraEnInventarioElPrecioUnitarioNeto() {
+        OrdenCompra orden = OrdenCompra.builder()
+                .id(99L).proveedor(proveedor).sucursal(sucursal)
+                .fecha(Instant.now()).estado(EstadoOrdenCompra.PENDIENTE)
+                .build();
+        orden.addDetalle(OrdenCompraDetalle.builder()
+                .producto(productoA).cantidad(new BigDecimal("5"))
+                .precioUnitario(new BigDecimal("200")).descuento(new BigDecimal("20")).build());
+        when(ordenCompraRepository.findById(99L)).thenReturn(Optional.of(orden));
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(currentUser.usuarioId()).thenReturn(7L);
+        when(ordenCompraRepository.save(any(OrdenCompra.class))).thenAnswer(i -> i.getArgument(0));
+
+        compraService.confirmarRecepcion(99L);
+
+        // cantidad 5 * precio 200 = 1000 bruto; 20% de descuento -> 800 neto -> 160 por unidad.
+        verify(inventarioService).registrarIngresoPorCompra(
+                eq(productoA), eq(sucursal), eq(new BigDecimal("5")), eq(new BigDecimal("160.00")), eq(7L));
+    }
+
+    @Test
+    void cancelar_ordenPendiente_pasaACancelada() {
+        OrdenCompra orden = ordenPendiente(EstadoOrdenCompra.PENDIENTE);
+        when(ordenCompraRepository.findById(99L)).thenReturn(Optional.of(orden));
+        when(currentUser.isAdmin()).thenReturn(true);
+        when(ordenCompraRepository.save(any(OrdenCompra.class))).thenAnswer(i -> i.getArgument(0));
+
+        PurchaseOrderResponse response = compraService.cancelar(99L);
+
+        assertEquals(EstadoOrdenCompra.CANCELADA, response.estado());
+    }
+
+    @Test
+    void cancelar_ordenYaRecibida_lanzaConflicto() {
+        when(ordenCompraRepository.findById(99L)).thenReturn(Optional.of(ordenPendiente(EstadoOrdenCompra.RECIBIDA)));
+        when(currentUser.isAdmin()).thenReturn(true);
+
+        assertThrows(ConflictoEstadoException.class, () -> compraService.cancelar(99L));
+
+        verify(ordenCompraRepository, never()).save(any());
     }
 }

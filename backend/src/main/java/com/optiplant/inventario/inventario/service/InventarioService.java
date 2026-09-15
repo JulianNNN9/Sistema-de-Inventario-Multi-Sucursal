@@ -53,6 +53,14 @@ public class InventarioService {
             throw new ValidacionException(
                     "Ese motivo se genera automáticamente al despachar o recibir una transferencia; no se puede registrar manualmente");
         }
+        if (request.motivo() == MotivoMovimiento.COMPRA) {
+            throw new ValidacionException(
+                    "Ese motivo se genera automáticamente al recibir una compra; no se puede registrar manualmente");
+        }
+        if (request.motivo() == MotivoMovimiento.VENTA) {
+            throw new ValidacionException(
+                    "Ese motivo se genera automáticamente al registrar una venta; no se puede registrar manualmente");
+        }
         currentUser.assertPuedeOperarSobreSucursal(request.branchId());
 
         Producto producto = productoRepository.findById(request.productId())
@@ -213,14 +221,18 @@ public class InventarioService {
      * Solo ADMIN_GENERAL puede consultar el inventario de una sucursal distinta
      * a la propia; GERENTE_SUCURSAL y OPERADOR_INVENTARIO están acotados a su
      * propia sucursal (a diferencia del resto de módulos de solo lectura, aquí
-     * no hay visibilidad de red para esos dos roles).
+     * no hay visibilidad de red para esos dos roles). {@code search} y
+     * {@code soloBajoMinimo} son filtros adicionales sobre el inventario de esa
+     * sucursal.
      */
     @Transactional(readOnly = true)
-    public PageResponse<InventarioResponse> listarInventarioSucursal(Long branchId, Pageable pageable) {
+    public PageResponse<InventarioResponse> listarInventarioSucursal(Long branchId, String search,
+                                                                      boolean soloBajoMinimo, Pageable pageable) {
         currentUser.assertPuedeOperarSobreSucursal(branchId);
         sucursalService.getEntityById(branchId);
         return PageResponse.from(
-                inventarioRepository.findBySucursalId(branchId, pageable).map(this::toResponse));
+                inventarioRepository.findBySucursalId(branchId, search, soloBajoMinimo, pageable)
+                        .map(this::toResponse));
     }
 
     @Transactional

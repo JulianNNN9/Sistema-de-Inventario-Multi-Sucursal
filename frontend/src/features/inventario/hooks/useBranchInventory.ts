@@ -7,9 +7,11 @@ interface Options {
   branchId: number | null;
   page?: number;
   size?: number;
+  search?: string;
+  soloBajoMinimo?: boolean;
 }
 
-export function useBranchInventory({ branchId, page = 0, size = 20 }: Options) {
+export function useBranchInventory({ branchId, page = 0, size = 20, search, soloBajoMinimo }: Options) {
   const [data, setData] = useState<PageResponse<InventarioSucursal> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export function useBranchInventory({ branchId, page = 0, size = 20 }: Options) {
     }
     let active = true;
     setLoading(true);
-    getBranchInventory(branchId, { page, size })
+    getBranchInventory(branchId, { page, size, search, soloBajoMinimo })
       .then((res) => {
         if (active) {
           setData(res);
@@ -40,7 +42,7 @@ export function useBranchInventory({ branchId, page = 0, size = 20 }: Options) {
     return () => {
       active = false;
     };
-  }, [branchId, page, size, reloadTick]);
+  }, [branchId, page, size, search, soloBajoMinimo, reloadTick]);
 
   return { data, loading, error, refetch };
 }

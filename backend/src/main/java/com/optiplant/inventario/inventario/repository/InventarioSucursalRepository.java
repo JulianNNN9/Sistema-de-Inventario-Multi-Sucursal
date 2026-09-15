@@ -20,9 +20,23 @@ public interface InventarioSucursalRepository extends JpaRepository<InventarioSu
 
     boolean existsByProductoId(Long productoId);
 
-    /** Inventario de una sucursal, paginado, con producto y sucursal ya cargados (RNF-01). */
+    /**
+     * Inventario de una sucursal, paginado, con producto y sucursal ya cargados (RNF-01).
+     * {@code search} filtra por SKU o nombre de producto (contiene, sin distinguir
+     * mayúsculas); {@code soloBajoMinimo} restringe a filas en o bajo su stock mínimo.
+     */
     @EntityGraph(attributePaths = {"producto", "sucursal"})
-    Page<InventarioSucursal> findBySucursalId(Long sucursalId, Pageable pageable);
+    @Query("""
+            select inv from InventarioSucursal inv
+            where inv.sucursal.id = :sucursalId
+              and (:search is null or :search = '' or lower(inv.producto.sku) like lower(concat('%', :search, '%'))
+                  or lower(inv.producto.nombre) like lower(concat('%', :search, '%')))
+              and (:soloBajoMinimo = false or inv.cantidadActual <= inv.stockMinimo)
+            """)
+    Page<InventarioSucursal> findBySucursalId(@Param("sucursalId") Long sucursalId,
+                                              @Param("search") String search,
+                                              @Param("soloBajoMinimo") boolean soloBajoMinimo,
+                                              Pageable pageable);
 
     /**
      * RF-29: productos cuya existencia ya alcanzó (o bajó) el mínimo. Sin

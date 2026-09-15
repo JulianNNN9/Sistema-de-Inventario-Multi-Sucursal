@@ -32,7 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Ciclo de vida de una transferencia entre sucursales (RF-17..RF-21, RN-02).
@@ -193,19 +195,19 @@ public class TransferenciaService {
                 transferencia.setEstado(EstadoTransferencia.REENVIO_SOLICITADO);
                 transferenciaRepository.save(transferencia);
                 registrarEvento(transferencia, EstadoTransferencia.REENVIO_SOLICITADO,
-                        "Reenvío solicitado: nueva transferencia #" + reenvio.getId());
+                        "Reenvío solicitado: nueva transferencia #" + reenvio.getId() + " — " + request.detalle());
             }
             case AJUSTE -> {
                 transferencia.setEstado(EstadoTransferencia.CERRADA_AJUSTE);
                 transferenciaRepository.save(transferencia);
                 registrarEvento(transferencia, EstadoTransferencia.CERRADA_AJUSTE,
-                        "Faltante cerrado por ajuste de inventario");
+                        "Faltante cerrado por ajuste de inventario — " + request.detalle());
             }
             case RECLAMACION -> {
                 transferencia.setEstado(EstadoTransferencia.CERRADA_RECLAMACION);
                 transferenciaRepository.save(transferencia);
                 registrarEvento(transferencia, EstadoTransferencia.CERRADA_RECLAMACION,
-                        "Reclamación formal generada a la sucursal origen");
+                        "Reclamación formal generada a la sucursal origen — " + request.detalle());
             }
         }
         return toResponse(transferencia);
@@ -217,14 +219,22 @@ public class TransferenciaService {
      * despacho) o {@code time} (fecha_estimada_llegada asc); cualquier otro
      * valor no ordena.
      */
+    /** {@code soloActivas}: true = requieren alguna acción; false = ya terminaron definitivamente. */
     @Transactional(readOnly = true)
     public PageResponse<TransferResponse> listar(EstadoTransferencia estado, Long branchIdParam,
-                                                 String sort, int page, int size) {
+                                                 String sort, boolean soloActivas, int page, int size) {
         Long branchId = currentUser.isAdmin() ? branchIdParam : currentUser.sucursalId();
         Page<Transferencia> resultado = "priority".equals(sort)
-                ? transferenciaRepository.searchOrderByPriority(estado, branchId, PageRequest.of(page, size))
-                : transferenciaRepository.search(estado, branchId, PageRequest.of(page, size, resolverOrden(sort)));
-        return PageResponse.from(resultado.map(this::toResponse));
+                ? transferenciaRepository.searchOrderByPriority(
+                        estado, branchId, soloActivas, EstadoTransferencia.NO_TERMINALES, PageRequest.of(page, size))
+                : transferenciaRepository.search(estado, branchId, soloActivas, EstadoTransferencia.NO_TERMINALES,
+                        PageRequest.of(page, size, resolverOrden(sort)));
+
+        List<Long> ids = resultado.getContent().stream().map(Transferencia::getId).toList();
+        Set<Long> aprobadas = ids.isEmpty()
+                ? Set.of()
+                : Set.copyOf(transferenciaEventoRepository.findTransferenciaIdsConComentario(ids, EVENTO_APROBADA));
+        return PageResponse.from(resultado.map(t -> toResponse(t, aprobadas.contains(t.getId()))));
     }
 
     private Sort resolverOrden(String sort) {
@@ -282,6 +292,11 @@ public class TransferenciaService {
     }
 
     private TransferResponse toResponse(Transferencia t) {
+        boolean aprobada = transferenciaEventoRepository.existsByTransferenciaIdAndComentario(t.getId(), EVENTO_APROBADA);
+        return toResponse(t, aprobada);
+    }
+
+    private TransferResponse toResponse(Transferencia t, boolean aprobada) {
         return new TransferResponse(
                 t.getId(),
                 t.getProducto().getId(), t.getProducto().getSku(), t.getProducto().getNombre(),
@@ -289,7 +304,7 @@ public class TransferenciaService {
                 t.getSucursalDestino().getId(), t.getSucursalDestino().getNombre(),
                 t.getCantidadSolicitada(), t.getCantidadEnviada(), t.getCantidadRecibida(), t.getCosto(),
                 t.getEstado(), t.getUrgencia(), t.getTransportista(),
-                t.getFechaEstimadaLlegada(), t.getFechaRealLlegada());
+                t.getFechaEstimadaLlegada(), t.getFechaRealLlegada(), aprobada);
     }
 
     private TransferEventResponse toEventResponse(TransferenciaEvento evento) {

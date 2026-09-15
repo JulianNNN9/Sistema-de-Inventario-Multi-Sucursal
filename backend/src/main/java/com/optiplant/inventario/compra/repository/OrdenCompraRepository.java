@@ -21,13 +21,15 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> 
 
     /**
      * Histórico de compras (RF-11) con filtros opcionales por proveedor, sucursal
-     * y producto. Proyección a DTO y {@code total} agregado en base de datos,
-     * paginado (RNF-01: agregación en BD, sin traer las filas a memoria).
+     * y producto. Proyección a DTO y {@code total} agregado en base de datos
+     * (ya neto de descuento por línea), paginado (RNF-01: agregación en BD, sin
+     * traer las filas a memoria). {@code soloActivas} alterna entre las órdenes
+     * PENDIENTES (vista principal) y el resto (histórico: RECIBIDA/CANCELADA).
      */
     @Query(value = """
             select new com.optiplant.inventario.compra.dto.PurchaseOrderSummaryResponse(
                 o.id, prov.id, prov.nombre, suc.id, suc.nombre, o.fecha, o.estado,
-                coalesce((select sum(d.cantidad * d.precioUnitario)
+                coalesce((select sum(d.cantidad * d.precioUnitario * (1 - d.descuento / 100))
                           from OrdenCompraDetalle d where d.orden = o), 0))
             from OrdenCompra o
             join o.proveedor prov
@@ -37,6 +39,8 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> 
               and (:productId is null or exists (
                     select 1 from OrdenCompraDetalle dp
                     where dp.orden = o and dp.producto.id = :productId))
+              and (:soloActivas = false or o.estado = 'PENDIENTE')
+              and (:soloActivas = true or o.estado <> 'PENDIENTE')
             order by o.fecha desc
             """,
             countQuery = """
@@ -46,10 +50,13 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> 
               and (:productId is null or exists (
                     select 1 from OrdenCompraDetalle dp
                     where dp.orden = o and dp.producto.id = :productId))
+              and (:soloActivas = false or o.estado = 'PENDIENTE')
+              and (:soloActivas = true or o.estado <> 'PENDIENTE')
             """)
     Page<PurchaseOrderSummaryResponse> searchSummaries(@Param("supplierId") Long supplierId,
                                                        @Param("branchId") Long branchId,
                                                        @Param("productId") Long productId,
+                                                       @Param("soloActivas") boolean soloActivas,
                                                        Pageable pageable);
 
     /**
@@ -61,7 +68,7 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> 
     @Query(value = """
             select new com.optiplant.inventario.compra.dto.PurchaseOrderSummaryResponse(
                 o.id, prov.id, prov.nombre, suc.id, suc.nombre, o.fecha, o.estado,
-                coalesce((select sum(d.cantidad * d.precioUnitario)
+                coalesce((select sum(d.cantidad * d.precioUnitario * (1 - d.descuento / 100))
                           from OrdenCompraDetalle d where d.orden = o), 0))
             from OrdenCompra o
             join o.proveedor prov

@@ -10,9 +10,10 @@ interface Options {
   estado?: EstadoTransferencia;
   branchId?: number;
   sort?: TransferSort;
+  soloActivas?: boolean;
 }
 
-export function useTransferenciasList({ page = 0, size = 20, estado, branchId, sort }: Options = {}) {
+export function useTransferenciasList({ page = 0, size = 20, estado, branchId, sort, soloActivas }: Options = {}) {
   const [data, setData] = useState<PageResponse<Transfer> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +24,7 @@ export function useTransferenciasList({ page = 0, size = 20, estado, branchId, s
   useEffect(() => {
     let active = true;
     setLoading(true);
-    listTransfers({ page, size, estado, branchId, sort })
+    listTransfers({ page, size, estado, branchId, sort, soloActivas })
       .then((res) => {
         if (active) {
           setData(res);
@@ -39,7 +40,7 @@ export function useTransferenciasList({ page = 0, size = 20, estado, branchId, s
     return () => {
       active = false;
     };
-  }, [page, size, estado, branchId, sort, reloadTick]);
+  }, [page, size, estado, branchId, sort, soloActivas, reloadTick]);
 
   return { data, loading, error, refetch };
 }

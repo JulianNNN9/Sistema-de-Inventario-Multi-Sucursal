@@ -9,7 +9,7 @@ import { apiClient } from '../../../shared/api/client';
 
 export async function getBranchInventory(
   branchId: number,
-  params: { page?: number; size?: number } = {},
+  params: { page?: number; size?: number; search?: string; soloBajoMinimo?: boolean } = {},
 ): Promise<PageResponse<InventarioSucursal>> {
   const { data } = await apiClient.get<PageResponse<InventarioSucursal>>(
     `/branches/${branchId}/inventory`,

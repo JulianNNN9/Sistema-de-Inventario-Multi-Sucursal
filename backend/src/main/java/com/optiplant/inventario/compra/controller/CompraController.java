@@ -51,8 +51,9 @@ public class CompraController {
             @RequestParam(name = "supplierId", required = false) Long supplierId,
             @RequestParam(name = "productId", required = false) Long productId,
             @RequestParam(name = "branchId", required = false) Long branchId,
+            @RequestParam(name = "soloActivas", required = false, defaultValue = "true") boolean soloActivas,
             @PageableDefault(size = 20) Pageable pageable) {
-        return compraService.listar(supplierId, productId, branchId, pageable);
+        return compraService.listar(supplierId, productId, branchId, soloActivas, pageable);
     }
 
     @GetMapping("/pending")
@@ -72,5 +73,11 @@ public class CompraController {
     @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public PurchaseOrderResponse confirmarRecepcion(@PathVariable Long id) {
         return compraService.confirmarRecepcion(id);
+    }
+
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
+    public PurchaseOrderResponse cancelar(@PathVariable Long id) {
+        return compraService.cancelar(id);
     }
 }

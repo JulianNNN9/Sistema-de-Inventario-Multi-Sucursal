@@ -18,6 +18,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     /**
      * Catálogo visible para una sucursal: productos que tienen existencias
      * registradas en ella (RF-01). Agregación en BD, paginada (RNF-01).
+     * {@code search} filtra por SKU o nombre (contiene, sin distinguir mayúsculas);
+     * se ignora si es nulo o vacío.
      */
     @Query("""
             select p from Producto p
@@ -25,6 +27,17 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
                 select 1 from InventarioSucursal i
                 where i.producto = p and i.sucursal.id = :sucursalId
             )
+            and (:search is null or :search = '' or lower(p.sku) like lower(concat('%', :search, '%'))
+                or lower(p.nombre) like lower(concat('%', :search, '%')))
             """)
-    Page<Producto> findAllInSucursal(@Param("sucursalId") Long sucursalId, Pageable pageable);
+    Page<Producto> findAllInSucursal(@Param("sucursalId") Long sucursalId, @Param("search") String search,
+                                     Pageable pageable);
+
+    /** Catálogo completo (ADMIN_GENERAL sin sucursal), con el mismo filtro de búsqueda. */
+    @Query("""
+            select p from Producto p
+            where (:search is null or :search = '' or lower(p.sku) like lower(concat('%', :search, '%'))
+                or lower(p.nombre) like lower(concat('%', :search, '%')))
+            """)
+    Page<Producto> buscar(@Param("search") String search, Pageable pageable);
 }

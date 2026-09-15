@@ -1,6 +1,8 @@
 package com.optiplant.inventario.producto.dto;
 
+import com.optiplant.inventario.producto.UnidadesMedida;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -14,7 +16,7 @@ public record ProductoUpdateRequest(
         String nombre,
 
         @NotBlank(message = "la unidad de medida base es obligatoria")
-        @Size(max = 30, message = "la unidad de medida base no puede superar 30 caracteres")
+        @Pattern(regexp = UnidadesMedida.REGEX, message = "la unidad de medida base no es una unidad válida")
         String unidadMedidaBase
 ) {
 }

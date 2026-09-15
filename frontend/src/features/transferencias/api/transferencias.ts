@@ -18,6 +18,7 @@ interface ListParams {
   estado?: EstadoTransferencia;
   branchId?: number;
   sort?: TransferSort;
+  soloActivas?: boolean;
 }
 
 export async function listTransfers(params: ListParams = {}): Promise<PageResponse<Transfer>> {

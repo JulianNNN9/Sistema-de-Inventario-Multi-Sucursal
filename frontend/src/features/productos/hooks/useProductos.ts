@@ -7,11 +7,12 @@ interface Options {
   page?: number;
   size?: number;
   branchId?: number;
+  search?: string;
   /** Si es false, el hook no dispara la petición (útil para modales aún cerrados). */
   enabled?: boolean;
 }
 
-export function useProductos({ page = 0, size = 20, branchId, enabled = true }: Options = {}) {
+export function useProductos({ page = 0, size = 20, branchId, search, enabled = true }: Options = {}) {
   const [data, setData] = useState<PageResponse<Producto> | null>(null);
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +24,7 @@ export function useProductos({ page = 0, size = 20, branchId, enabled = true }: 
     if (!enabled) return;
     let active = true;
     setLoading(true);
-    listProducts({ page, size, branchId })
+    listProducts({ page, size, branchId, search })
       .then((res) => {
         if (active) {
           setData(res);
@@ -39,7 +40,7 @@ export function useProductos({ page = 0, size = 20, branchId, enabled = true }: 
     return () => {
       active = false;
     };
-  }, [page, size, branchId, reloadTick, enabled]);
+  }, [page, size, branchId, search, reloadTick, enabled]);
 
   return { data, loading, error, refetch };
 }

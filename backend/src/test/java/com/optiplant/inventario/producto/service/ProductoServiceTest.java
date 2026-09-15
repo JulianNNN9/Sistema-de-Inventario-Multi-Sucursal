@@ -123,32 +123,32 @@ class ProductoServiceTest {
     void listar_noAdmin_ignoraBranchIdParamYUsaSuSucursal() {
         when(currentUser.isAdmin()).thenReturn(false);
         when(currentUser.sucursalId()).thenReturn(1L);
-        when(productoRepository.findAllInSucursal(eq(1L), any(Pageable.class))).thenReturn(Page.empty());
+        when(productoRepository.findAllInSucursal(eq(1L), any(), any(Pageable.class))).thenReturn(Page.empty());
 
-        productoService.listar(99L, PageRequest.of(0, 20));
+        productoService.listar(99L, null, PageRequest.of(0, 20));
 
-        verify(productoRepository).findAllInSucursal(eq(1L), any(Pageable.class));
-        verify(productoRepository, never()).findAll(any(Pageable.class));
+        verify(productoRepository).findAllInSucursal(eq(1L), any(), any(Pageable.class));
+        verify(productoRepository, never()).buscar(any(), any(Pageable.class));
     }
 
     @Test
     void listar_admin_conBranchId_filtraPorEsaSucursal() {
         when(currentUser.isAdmin()).thenReturn(true);
-        when(productoRepository.findAllInSucursal(eq(7L), any(Pageable.class))).thenReturn(Page.empty());
+        when(productoRepository.findAllInSucursal(eq(7L), any(), any(Pageable.class))).thenReturn(Page.empty());
 
-        productoService.listar(7L, PageRequest.of(0, 20));
+        productoService.listar(7L, null, PageRequest.of(0, 20));
 
-        verify(productoRepository).findAllInSucursal(eq(7L), any(Pageable.class));
+        verify(productoRepository).findAllInSucursal(eq(7L), any(), any(Pageable.class));
     }
 
     @Test
     void listar_admin_sinBranchId_devuelveTodoElCatalogo() {
         when(currentUser.isAdmin()).thenReturn(true);
-        when(productoRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
+        when(productoRepository.buscar(any(), any(Pageable.class))).thenReturn(Page.empty());
 
-        productoService.listar(null, PageRequest.of(0, 20));
+        productoService.listar(null, null, PageRequest.of(0, 20));
 
-        verify(productoRepository).findAll(any(Pageable.class));
-        verify(productoRepository, never()).findAllInSucursal(any(), any());
+        verify(productoRepository).buscar(any(), any(Pageable.class));
+        verify(productoRepository, never()).findAllInSucursal(any(), any(), any());
     }
 }

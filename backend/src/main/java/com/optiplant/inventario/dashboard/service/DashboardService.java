@@ -40,11 +40,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    /** Sección 3: únicos estados no terminales del ciclo de vida de una transferencia. */
-    private static final List<EstadoTransferencia> ESTADOS_NO_TERMINALES = List.of(
-            EstadoTransferencia.PENDIENTE, EstadoTransferencia.EN_TRANSITO,
-            EstadoTransferencia.CON_FALTANTES, EstadoTransferencia.REENVIO_SOLICITADO);
-
     private static final int VENTANA_ROTACION_DIAS = 30;
     private static final int MESES_COMPARACION = 4;
     private static final ZoneOffset ZONA = ZoneOffset.UTC;
@@ -91,7 +86,7 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public List<ActiveTransfersCount> activeTransfers(Long branchIdParam) {
         Long branchId = resolverSucursal(branchIdParam);
-        return transferenciaRepository.countActivasPorEstado(ESTADOS_NO_TERMINALES, branchId);
+        return transferenciaRepository.countActivasPorEstado(EstadoTransferencia.NO_TERMINALES, branchId);
     }
 
     /** RF-29: productos con existencia en el mínimo o por debajo. */

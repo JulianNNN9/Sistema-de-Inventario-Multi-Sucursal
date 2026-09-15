@@ -3,6 +3,7 @@ package com.optiplant.inventario.venta.controller;
 import com.optiplant.inventario.common.dto.PageResponse;
 import com.optiplant.inventario.venta.dto.PriceListRequest;
 import com.optiplant.inventario.venta.dto.PriceListResponse;
+import com.optiplant.inventario.venta.dto.PriceListUpdateRequest;
 import com.optiplant.inventario.venta.service.ListaPrecioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -12,7 +13,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -43,5 +46,11 @@ public class ListaPrecioController {
     @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public PageResponse<PriceListResponse> listar(@PageableDefault(size = 20) Pageable pageable) {
         return listaPrecioService.listar(pageable);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL')")
+    public PriceListResponse actualizar(@PathVariable Long id, @Valid @RequestBody PriceListUpdateRequest request) {
+        return listaPrecioService.actualizar(id, request);
     }
 }

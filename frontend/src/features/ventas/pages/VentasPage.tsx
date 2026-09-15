@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { Eye, Plus, Receipt, Tags, Trash2 } from 'lucide-react';
+import { ChevronUp, Eye, Pencil, Plus, Receipt, Tags, Trash2 } from 'lucide-react';
 import {
   Button,
   DataTable,
@@ -13,9 +13,10 @@ import {
 } from '../../../shared/components/ui';
 import { ErrorAlert } from '../../../shared/components/ErrorAlert';
 import { createSale } from '../api/ventas';
-import { createPriceList } from '../api/priceLists';
+import { createPriceList, updatePriceList } from '../api/priceLists';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useBranches } from '../../sucursales/hooks/useBranches';
+import { useBranchInventory } from '../../inventario/hooks/useBranchInventory';
 import { useMutation } from '../../../shared/hooks/useMutation';
 import { usePriceLists } from '../hooks/usePriceLists';
 import { useProductos } from '../../productos/hooks/useProductos';
@@ -33,7 +34,7 @@ function net(cantidad: number, precio: number, descuento: number): number {
 }
 
 export function VentasPage() {
-  const { rol } = useAuth();
+  const { rol, sucursalId } = useAuth();
   const isAdmin = rol === 'ADMIN_GENERAL';
   // Registrar venta: disponible para los tres roles.
   const canManage = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL' || rol === 'OPERADOR_INVENTARIO';
@@ -180,10 +181,11 @@ export function VentasPage() {
       <PriceListsModal
         open={priceListsOpen}
         isAdmin={isAdmin}
+        sucursalId={sucursalId}
         branches={branches}
         priceLists={priceLists}
         onClose={() => setPriceListsOpen(false)}
-        onCreated={refetchPriceLists}
+        onSaved={refetchPriceLists}
       />
 
       <ReceiptModal
@@ -510,20 +512,42 @@ const EMPTY_PRICE_ITEM: PriceItemDraft = { productId: '', precio: '' };
 interface PriceListsModalProps {
   open: boolean;
   isAdmin: boolean;
+  sucursalId: number | null;
   branches: { id: number; nombre: string }[];
   priceLists: PriceList[];
   onClose: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
 }
 
-function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreated }: PriceListsModalProps) {
+function PriceListsModal({ open, isAdmin, sucursalId, branches, priceLists, onClose, onSaved }: PriceListsModalProps) {
   const { data: productosData } = useProductos({ page: 0, size: 300, enabled: open });
-  const { mutate, submitting, error, resetError } = useMutation(createPriceList);
+  const createM = useMutation(createPriceList);
+  const updateM = useMutation(updatePriceList);
   const { showSuccess, showError } = useToast();
 
+  const [editing, setEditing] = useState<PriceList | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [nombre, setNombre] = useState('');
   const [branchId, setBranchId] = useState('');
   const [items, setItems] = useState<PriceItemDraft[]>([{ ...EMPTY_PRICE_ITEM }]);
+
+  const mutation = editing ? updateM : createM;
+
+  // Referencia de stock (y, en edición, del precio actual) para la sucursal de
+  // la lista: solo se conoce cuando hay una sucursal concreta seleccionada.
+  const referenceBranchId = editing ? editing.branchId : isAdmin && branchId ? Number(branchId) : null;
+  const { data: inventoryData } = useBranchInventory({
+    branchId: referenceBranchId,
+    size: 300,
+  });
+  const stockByProduct = useMemo(
+    () => new Map((inventoryData?.content ?? []).map((r) => [r.productId, r.cantidadActual])),
+    [inventoryData],
+  );
+  const precioActualByProduct = useMemo(
+    () => new Map((editing?.items ?? []).map((i) => [i.productId, i.precio])),
+    [editing],
+  );
 
   const productOptions = useMemo(
     () => (productosData?.content ?? []).map((p) => ({ value: p.id, label: `${p.sku} · ${p.nombre}` })),
@@ -531,27 +555,51 @@ function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreat
   );
 
   function reset() {
+    setEditing(null);
     setNombre('');
     setBranchId('');
     setItems([{ ...EMPTY_PRICE_ITEM }]);
-    resetError();
+    createM.resetError();
+    updateM.resetError();
+  }
+
+  function startEdit(lista: PriceList) {
+    setEditing(lista);
+    setNombre(lista.nombre);
+    setBranchId(lista.branchId ? String(lista.branchId) : '');
+    setItems(lista.items.map((i) => ({ productId: String(i.productId), precio: String(i.precio) })));
+    createM.resetError();
+    updateM.resetError();
+  }
+
+  // No-admin solo puede editar listas de su propia sucursal (igual que en el backend);
+  // las globales son política de red, reservada a ADMIN_GENERAL.
+  function canEdit(lista: PriceList): boolean {
+    if (isAdmin) return true;
+    return lista.branchId !== null && lista.branchId === sucursalId;
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    const parsedItems = items
+      .filter((i) => i.productId && i.precio)
+      .map((i) => ({ productId: Number(i.productId), precio: Number(i.precio) }));
     try {
-      await mutate({
-        nombre,
-        branchId: isAdmin && branchId ? Number(branchId) : undefined,
-        items: items
-          .filter((i) => i.productId && i.precio)
-          .map((i) => ({ productId: Number(i.productId), precio: Number(i.precio) })),
-      });
-      showSuccess(`Lista de precios "${nombre}" creada.`);
+      if (editing) {
+        await updateM.mutate(editing.id, { nombre, items: parsedItems });
+        showSuccess(`Lista de precios "${nombre}" actualizada.`);
+      } else {
+        await createM.mutate({
+          nombre,
+          branchId: isAdmin && branchId ? Number(branchId) : undefined,
+          items: parsedItems,
+        });
+        showSuccess(`Lista de precios "${nombre}" creada.`);
+      }
       reset();
-      onCreated();
+      onSaved();
     } catch (err) {
-      showError((err as { message?: string }).message ?? 'No se pudo crear la lista de precios.');
+      showError((err as { message?: string }).message ?? 'No se pudo guardar la lista de precios.');
       /* el error también se muestra en el modal */
     }
   }
@@ -562,18 +610,68 @@ function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreat
         {priceLists.length > 0 && (
           <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
             {priceLists.map((l) => (
-              <li key={l.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                <span className="font-medium text-slate-800">{l.nombre}</span>
-                <span className="text-slate-500">
-                  {l.sucursalNombre ?? 'Global'} · {l.items.length} ítems
-                </span>
+              <li key={l.id} className="px-3 py-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-slate-800">{l.nombre}</span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <span className="text-slate-500">
+                      {l.sucursalNombre ?? 'Global'} · {l.items.length} ítems
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setExpandedId((current) => (current === l.id ? null : l.id))}
+                      aria-label={expandedId === l.id ? `Ocultar ítems de ${l.nombre}` : `Ver ítems de ${l.nombre}`}
+                    >
+                      {expandedId === l.id ? (
+                        <ChevronUp className="h-4 w-4" aria-hidden />
+                      ) : (
+                        <Eye className="h-4 w-4" aria-hidden />
+                      )}
+                    </Button>
+                    {canEdit(l) && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => startEdit(l)}
+                        aria-label={`Editar ${l.nombre}`}
+                      >
+                        <Pencil className="h-4 w-4" aria-hidden />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {expandedId === l.id && (
+                  <ul className="mt-2 divide-y divide-slate-50 rounded-lg bg-slate-50 px-2">
+                    {l.items.map((item) => (
+                      <li key={item.productId} className="flex items-center justify-between py-1.5 text-xs">
+                        <span className="text-slate-700">
+                          {item.sku} · {item.productoNombre}
+                        </span>
+                        <span className="font-medium text-slate-800">{formatCurrency(item.precio)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3 border-t border-slate-100 pt-4">
-          {error && <ErrorAlert message={error} />}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700">
+              {editing ? `Editando "${editing.nombre}"` : 'Nueva lista'}
+            </span>
+            {editing && (
+              <Button type="button" size="sm" variant="ghost" onClick={reset}>
+                Cancelar edición
+              </Button>
+            )}
+          </div>
+          {mutation.error && <ErrorAlert message={mutation.error} />}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input
               label="Nombre"
@@ -585,11 +683,16 @@ function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreat
             {isAdmin && (
               <Select
                 label="Sucursal"
-                hint="Deja sin seleccionar para crear una lista global (todas las sucursales)."
+                hint={
+                  editing
+                    ? 'La sucursal de una lista no se puede cambiar; crea una nueva si necesitas otra.'
+                    : 'Deja sin seleccionar para crear una lista global (todas las sucursales).'
+                }
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
                 options={branches.map((b) => ({ value: b.id, label: b.nombre }))}
                 placeholder="Global"
+                disabled={editing !== null}
               />
             )}
           </div>
@@ -607,48 +710,73 @@ function PriceListsModal({ open, isAdmin, branches, priceLists, onClose, onCreat
                 Agregar
               </Button>
             </div>
-            <p className="text-xs text-slate-500">Define el precio de cada producto incluido en esta lista.</p>
-            {items.map((item, index) => (
-              <div key={index} className="grid grid-cols-[1fr_auto_auto] gap-2">
-                <Select
-                  value={item.productId}
-                  onChange={(e) =>
-                    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, productId: e.target.value } : it)))
-                  }
-                  options={productOptions}
-                  placeholder="Producto"
-                  aria-label={`Producto del ítem ${index + 1}`}
-                />
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Precio"
-                  className="w-28"
-                  value={item.precio}
-                  onChange={(e) =>
-                    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, precio: e.target.value } : it)))
-                  }
-                  aria-label={`Precio del ítem ${index + 1}`}
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  disabled={items.length === 1}
-                  onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
-                  aria-label={`Eliminar ítem ${index + 1}`}
-                >
-                  <Trash2 className="h-4 w-4 text-rose-500" aria-hidden />
-                  Eliminar
-                </Button>
-              </div>
-            ))}
+            <p className="text-xs text-slate-500">
+              Define el precio de cada producto incluido en esta lista.
+              {referenceBranchId !== null && ' El stock mostrado es una referencia de la sucursal de la lista.'}
+            </p>
+            {items.map((item, index) => {
+              const productId = item.productId ? Number(item.productId) : null;
+              const precioActual = productId !== null ? precioActualByProduct.get(productId) : undefined;
+              const stock = productId !== null ? stockByProduct.get(productId) : undefined;
+              return (
+                <div key={index} className="space-y-1 rounded-xl border border-slate-100 p-2">
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+                    <Select
+                      value={item.productId}
+                      onChange={(e) =>
+                        setItems((prev) =>
+                          prev.map((it, i) => (i === index ? { ...it, productId: e.target.value } : it)),
+                        )
+                      }
+                      options={productOptions}
+                      placeholder="Producto"
+                      aria-label={`Producto del ítem ${index + 1}`}
+                    />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Nuevo precio"
+                      className="w-28"
+                      value={item.precio}
+                      onChange={(e) =>
+                        setItems((prev) => prev.map((it, i) => (i === index ? { ...it, precio: e.target.value } : it)))
+                      }
+                      aria-label={`Precio del ítem ${index + 1}`}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={items.length === 1}
+                      onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
+                      aria-label={`Eliminar ítem ${index + 1}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-rose-500" aria-hidden />
+                      Eliminar
+                    </Button>
+                  </div>
+                  {productId !== null && (precioActual !== undefined || stock !== undefined) && (
+                    <p className="text-xs text-slate-500">
+                      {precioActual !== undefined && <>Precio actual: {formatCurrency(precioActual)}</>}
+                      {precioActual !== undefined && stock !== undefined && ' · '}
+                      {stock !== undefined && <>Stock: {formatNumber(stock)}</>}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          <Button type="submit" size="sm" loading={submitting}>
-            <Plus className="h-4 w-4" aria-hidden />
-            Crear lista
+          <Button type="submit" size="sm" loading={mutation.submitting}>
+            {editing ? (
+              'Guardar cambios'
+            ) : (
+              <>
+                <Plus className="h-4 w-4" aria-hidden />
+                Crear lista
+              </>
+            )}
           </Button>
         </form>
       </div>

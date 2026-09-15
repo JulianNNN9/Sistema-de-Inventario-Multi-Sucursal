@@ -23,6 +23,9 @@ public record TransferResponse(
         Urgencia urgencia,
         String transportista,
         Instant fechaEstimadaLlegada,
-        Instant fechaRealLlegada
+        Instant fechaRealLlegada,
+        /** El modelo no tiene un estado "APROBADA" propio (Sección 3): esto indica si,
+         * estando PENDIENTE, ya fue aprobada por el origen y está lista para despacho. */
+        boolean aprobada
 ) {
 }

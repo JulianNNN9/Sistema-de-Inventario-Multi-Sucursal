@@ -6,6 +6,7 @@ interface ListParams {
   page?: number;
   size?: number;
   branchId?: number;
+  search?: string;
 }
 
 export async function listProducts(params: ListParams = {}): Promise<PageResponse<Producto>> {

@@ -9,6 +9,7 @@ interface Options {
   supplierId?: number;
   productId?: number;
   branchId?: number;
+  soloActivas?: boolean;
   enabled?: boolean;
 }
 
@@ -18,6 +19,7 @@ export function useComprasList({
   supplierId,
   productId,
   branchId,
+  soloActivas,
   enabled = true,
 }: Options = {}) {
   const [data, setData] = useState<PageResponse<PurchaseOrderSummary> | null>(null);
@@ -34,7 +36,7 @@ export function useComprasList({
     }
     let active = true;
     setLoading(true);
-    listPurchaseOrders({ page, size, supplierId, productId, branchId })
+    listPurchaseOrders({ page, size, supplierId, productId, branchId, soloActivas })
       .then((res) => {
         if (active) {
           setData(res);
@@ -50,7 +52,7 @@ export function useComprasList({
     return () => {
       active = false;
     };
-  }, [page, size, supplierId, productId, branchId, enabled, reloadTick]);
+  }, [page, size, supplierId, productId, branchId, soloActivas, enabled, reloadTick]);
 
   return { data, loading, error, refetch };
 }

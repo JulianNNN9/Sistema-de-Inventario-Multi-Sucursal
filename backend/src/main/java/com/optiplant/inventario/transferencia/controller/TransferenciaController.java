@@ -85,11 +85,12 @@ public class TransferenciaController {
             @RequestParam(name = "estado", required = false) EstadoTransferencia estado,
             @RequestParam(name = "branchId", required = false) Long branchId,
             @RequestParam(name = "sort", required = false) String sort,
+            @RequestParam(name = "soloActivas", required = false, defaultValue = "true") boolean soloActivas,
             @PageableDefault(size = 20) Pageable pageable) {
         // page/size de Pageable; "sort" se interpreta aparte (RF-23: priority|cost|time).
         // "priority" no es una propiedad JPA real (usa searchOrderByPriority); "cost" y
         // "time" sí mapean a columnas reales (costo, fechaEstimadaLlegada).
-        return transferenciaService.listar(estado, branchId, sort,
+        return transferenciaService.listar(estado, branchId, sort, soloActivas,
                 pageable.getPageNumber(), pageable.getPageSize());
     }
 

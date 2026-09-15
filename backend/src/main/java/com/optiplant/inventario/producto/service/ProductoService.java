@@ -69,13 +69,14 @@ public class ProductoService {
     /**
      * {@code branchIdParam} sólo se respeta para ADMIN_GENERAL; el resto de roles
      * ve siempre el catálogo de su propia sucursal (Sección 4.2, RF-01).
+     * {@code search} filtra por SKU o nombre (contiene, sin distinguir mayúsculas).
      */
     @Transactional(readOnly = true)
-    public PageResponse<ProductoResponse> listar(Long branchIdParam, Pageable pageable) {
+    public PageResponse<ProductoResponse> listar(Long branchIdParam, String search, Pageable pageable) {
         Long effectiveBranchId = currentUser.isAdmin() ? branchIdParam : currentUser.sucursalId();
         Page<Producto> page = effectiveBranchId == null
-                ? productoRepository.findAll(pageable)
-                : productoRepository.findAllInSucursal(effectiveBranchId, pageable);
+                ? productoRepository.buscar(search, pageable)
+                : productoRepository.findAllInSucursal(effectiveBranchId, search, pageable);
         return PageResponse.from(page.map(this::toResponse));
     }
 

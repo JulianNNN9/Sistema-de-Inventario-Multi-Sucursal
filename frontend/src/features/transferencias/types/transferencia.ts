@@ -30,6 +30,8 @@ export interface Transfer {
   transportista: string | null;
   fechaEstimadaLlegada: string | null;
   fechaRealLlegada: string | null;
+  /** El modelo no tiene un estado "APROBADA" propio: indica si, estando PENDIENTE, ya fue aprobada y está lista para despacho. */
+  aprobada: boolean;
 }
 
 export interface TransferRequestInput {
@@ -57,6 +59,8 @@ export interface ReceiveInput {
 
 export interface ResolveInput {
   tratamiento: TratamientoFaltante;
+  /** PQRS: qué pasó con el faltante y por qué se resuelve así; queda en el historial. */
+  detalle: string;
 }
 
 export interface TransferEvent {

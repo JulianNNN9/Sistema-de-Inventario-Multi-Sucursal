@@ -18,12 +18,16 @@ public enum EstadoTransferencia {
     CERRADA_RECLAMACION;
 
     /**
-     * Sección 3: únicos estados no terminales del ciclo de vida de una
-     * transferencia — la que "aún requiere cualquier tipo de acción", en
-     * contraste con las que ya terminaron definitivamente.
+     * Estados no terminales del ciclo de vida de una transferencia — los que
+     * "aún requieren cualquier tipo de acción", en contraste con los que ya
+     * terminaron definitivamente. REENVIO_SOLICITADO se cuenta como terminal
+     * a propósito: sobre ese registro puntual ya no hay ninguna acción posible
+     * (ningún botón se habilita en ese estado); el faltante sigue su curso en
+     * la nueva transferencia que ya se generó, que es la que de verdad requiere
+     * acción y aparece por su cuenta como PENDIENTE.
      */
     public static final List<EstadoTransferencia> NO_TERMINALES =
-            List.of(PENDIENTE, EN_TRANSITO, CON_FALTANTES, REENVIO_SOLICITADO);
+            List.of(PENDIENTE, EN_TRANSITO, CON_FALTANTES);
 
     /** Nombre en español natural, para usar en mensajes dirigidos al usuario final. */
     public String etiqueta() {

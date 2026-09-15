@@ -312,8 +312,10 @@ class TransferenciaServiceTest {
         Transferencia reenvio = guardadas.get(0);
         assertEquals(EstadoTransferencia.PENDIENTE, reenvio.getEstado());
         assertEquals(0, reenvio.getCantidadSolicitada().compareTo(new BigDecimal("4")));
+        assertEquals(99L, reenvio.getReenvioDeId());
 
         assertEquals(EstadoTransferencia.REENVIO_SOLICITADO, t.getEstado());
+        assertEquals("Faltaron 4 unidades por daño en el empaque", t.getDetalleResolucion());
     }
 
     @Test
@@ -328,6 +330,7 @@ class TransferenciaServiceTest {
                 new ResolveRequest(TratamientoFaltante.AJUSTE, "Se asume la pérdida, no vale la pena reclamar"));
 
         assertEquals(EstadoTransferencia.CERRADA_AJUSTE, response.estado());
+        assertEquals("Se asume la pérdida, no vale la pena reclamar", response.detalleResolucion());
         verifyNoInteractions(inventarioService);
     }
 
@@ -343,6 +346,7 @@ class TransferenciaServiceTest {
                 new ResolveRequest(TratamientoFaltante.RECLAMACION, "El transportista admite haber perdido la mercancía"));
 
         assertEquals(EstadoTransferencia.CERRADA_RECLAMACION, response.estado());
+        assertEquals("El transportista admite haber perdido la mercancía", response.detalleResolucion());
     }
 
     // --- listar / orden (RF-23, Módulo 5) -------------------------------------------

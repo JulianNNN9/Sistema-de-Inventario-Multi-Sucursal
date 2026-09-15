@@ -26,6 +26,10 @@ public record TransferResponse(
         Instant fechaRealLlegada,
         /** El modelo no tiene un estado "APROBADA" propio (Sección 3): esto indica si,
          * estando PENDIENTE, ya fue aprobada por el origen y está lista para despacho. */
-        boolean aprobada
+        boolean aprobada,
+        /** Descripción del incidente capturada al resolver un faltante (RF-21); nulo si no aplica. */
+        String detalleResolucion,
+        /** true si esta transferencia es el reenvío por faltante de otra. */
+        boolean esReenvio
 ) {
 }

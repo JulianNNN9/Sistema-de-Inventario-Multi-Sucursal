@@ -17,8 +17,8 @@ export interface InventoryRotationResponse {
   menorRotacion: InventoryRotationItem[];
 }
 
-/** Únicos estados no terminales del ciclo de vida de una transferencia (RF-28). */
-export type EstadoTransferenciaActivo = 'PENDIENTE' | 'EN_TRANSITO' | 'CON_FALTANTES' | 'REENVIO_SOLICITADO';
+/** Estados no terminales del ciclo de vida de una transferencia (RF-28). */
+export type EstadoTransferenciaActivo = 'PENDIENTE' | 'EN_TRANSITO' | 'CON_FALTANTES';
 
 export interface ActiveTransfersCount {
   estado: EstadoTransferenciaActivo;

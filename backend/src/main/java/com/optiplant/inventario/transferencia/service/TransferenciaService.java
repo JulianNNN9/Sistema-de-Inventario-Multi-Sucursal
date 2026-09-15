@@ -183,6 +183,8 @@ public class TransferenciaService {
         currentUser.assertPuedeOperarSobreSucursal(transferencia.getSucursalDestino().getId());
         exigirEstado(transferencia, EstadoTransferencia.CON_FALTANTES, "admitir tratamiento de faltante");
 
+        transferencia.setDetalleResolucion(request.detalle());
+
         switch (request.tratamiento()) {
             case REENVIO -> {
                 BigDecimal faltante = transferencia.getCantidadEnviada()
@@ -194,6 +196,7 @@ public class TransferenciaService {
                         .cantidadSolicitada(faltante)
                         .estado(EstadoTransferencia.PENDIENTE)
                         .urgencia(transferencia.getUrgencia())
+                        .reenvioDeId(transferencia.getId())
                         .build());
                 registrarEvento(reenvio, EstadoTransferencia.PENDIENTE,
                         "Reenvío por faltante de la transferencia #" + transferencia.getId());
@@ -201,19 +204,19 @@ public class TransferenciaService {
                 transferencia.setEstado(EstadoTransferencia.REENVIO_SOLICITADO);
                 transferenciaRepository.save(transferencia);
                 registrarEvento(transferencia, EstadoTransferencia.REENVIO_SOLICITADO,
-                        "Reenvío solicitado: nueva transferencia #" + reenvio.getId() + " — " + request.detalle());
+                        "Reenvío solicitado: nueva transferencia #" + reenvio.getId());
             }
             case AJUSTE -> {
                 transferencia.setEstado(EstadoTransferencia.CERRADA_AJUSTE);
                 transferenciaRepository.save(transferencia);
                 registrarEvento(transferencia, EstadoTransferencia.CERRADA_AJUSTE,
-                        "Faltante cerrado por ajuste de inventario — " + request.detalle());
+                        "Faltante cerrado por ajuste de inventario");
             }
             case RECLAMACION -> {
                 transferencia.setEstado(EstadoTransferencia.CERRADA_RECLAMACION);
                 transferenciaRepository.save(transferencia);
                 registrarEvento(transferencia, EstadoTransferencia.CERRADA_RECLAMACION,
-                        "Reclamación formal generada a la sucursal origen — " + request.detalle());
+                        "Reclamación formal generada a la sucursal origen");
             }
         }
         return toResponse(transferencia);
@@ -310,7 +313,8 @@ public class TransferenciaService {
                 t.getSucursalDestino().getId(), t.getSucursalDestino().getNombre(),
                 t.getCantidadSolicitada(), t.getCantidadEnviada(), t.getCantidadRecibida(), t.getCosto(),
                 t.getEstado(), t.getUrgencia(), t.getTransportista(),
-                t.getFechaEstimadaLlegada(), t.getFechaRealLlegada(), aprobada);
+                t.getFechaEstimadaLlegada(), t.getFechaRealLlegada(), aprobada,
+                t.getDetalleResolucion(), t.getReenvioDeId() != null);
     }
 
     private TransferEventResponse toEventResponse(TransferenciaEvento evento) {

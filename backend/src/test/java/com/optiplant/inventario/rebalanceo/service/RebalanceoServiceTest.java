@@ -140,6 +140,6 @@ class RebalanceoServiceTest {
     private TransferResponse dummyResponse() {
         return new TransferResponse(99L, 10L, "SKU-1", "Tornillo", 1L, "Norte", 2L, "Sur",
                 new BigDecimal("5"), null, null, BigDecimal.ZERO, EstadoTransferencia.PENDIENTE, Urgencia.MEDIA, null, null, null,
-                false);
+                false, null, false);
     }
 }

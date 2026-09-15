@@ -36,14 +36,12 @@ const ESTADO_LABEL: Record<EstadoTransferenciaActivo, string> = {
   PENDIENTE: 'Pendientes',
   EN_TRANSITO: 'En tránsito',
   CON_FALTANTES: 'Con faltantes',
-  REENVIO_SOLICITADO: 'Reenvío solicitado',
 };
 
 const ESTADO_TONE: Record<EstadoTransferenciaActivo, 'warning' | 'info'> = {
   PENDIENTE: 'warning',
   EN_TRANSITO: 'info',
   CON_FALTANTES: 'warning',
-  REENVIO_SOLICITADO: 'info',
 };
 
 function formatPeriodo(periodo: string): string {

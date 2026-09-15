@@ -87,6 +87,14 @@ public class Transferencia {
     @Column(name = "fecha_real_llegada")
     private Instant fechaRealLlegada;
 
+    /** Descripción del incidente capturada al resolver un faltante (RF-21). */
+    @Column(name = "detalle_resolucion", columnDefinition = "text")
+    private String detalleResolucion;
+
+    /** No nulo cuando esta transferencia es el reenvío por faltante de otra. */
+    @Column(name = "reenvio_de_id")
+    private Long reenvioDeId;
+
     @Version
     @Column(name = "version", nullable = false)
     private Long version;

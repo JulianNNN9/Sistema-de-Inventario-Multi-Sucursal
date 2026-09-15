@@ -159,7 +159,7 @@ class DashboardServiceTest {
     // --- active-transfers (RF-28) --------------------------------------------------
 
     @Test
-    void activeTransfers_filtraExactamenteLosCuatroEstadosNoTerminales() {
+    void activeTransfers_filtraExactamenteLosTresEstadosNoTerminales() {
         when(currentUser.isAdmin()).thenReturn(false);
         when(currentUser.sucursalId()).thenReturn(1L);
         ArgumentCaptor<List<EstadoTransferencia>> estadosCaptor = ArgumentCaptor.captor();
@@ -167,13 +167,13 @@ class DashboardServiceTest {
 
         dashboardService.activeTransfers(null);
 
-        assertEquals(4, estadosCaptor.getValue().size());
+        assertEquals(3, estadosCaptor.getValue().size());
         assertTrue(estadosCaptor.getValue().containsAll(List.of(
-                EstadoTransferencia.PENDIENTE, EstadoTransferencia.EN_TRANSITO,
-                EstadoTransferencia.CON_FALTANTES, EstadoTransferencia.REENVIO_SOLICITADO)));
+                EstadoTransferencia.PENDIENTE, EstadoTransferencia.EN_TRANSITO, EstadoTransferencia.CON_FALTANTES)));
         assertTrue(estadosCaptor.getValue().stream().noneMatch(
                 e -> e == EstadoTransferencia.COMPLETADA || e == EstadoTransferencia.RECHAZADA
-                        || e == EstadoTransferencia.CERRADA_AJUSTE || e == EstadoTransferencia.CERRADA_RECLAMACION));
+                        || e == EstadoTransferencia.CERRADA_AJUSTE || e == EstadoTransferencia.CERRADA_RECLAMACION
+                        || e == EstadoTransferencia.REENVIO_SOLICITADO));
     }
 
     // --- restock-alerts (RF-29) -----------------------------------------------------

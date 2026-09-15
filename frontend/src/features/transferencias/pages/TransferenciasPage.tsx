@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   ArrowLeftRight,
   Check,
+  Eye,
   History,
   PackageCheck,
   Plus,
@@ -120,6 +121,7 @@ export function TransferenciasPage() {
   const [receiveTarget, setReceiveTarget] = useState<Transfer | null>(null);
   const [resolveTarget, setResolveTarget] = useState<Transfer | null>(null);
   const [eventsId, setEventsId] = useState<number | null>(null);
+  const [incidentTarget, setIncidentTarget] = useState<Transfer | null>(null);
 
   const approveM = useMutation(approveTransfer);
   const { showSuccess, showError } = useToast();
@@ -204,7 +206,12 @@ export function TransferenciasPage() {
     {
       key: 'estado',
       header: 'Estado',
-      render: (t) => <Badge tone={ESTADO_TONE[t.estado]}>{t.estado.replace('_', ' ')}</Badge>,
+      render: (t) => (
+        <div className="flex flex-wrap items-center gap-1">
+          {t.esReenvio && <Badge tone="info">Reenvío</Badge>}
+          <Badge tone={ESTADO_TONE[t.estado]}>{t.estado.replace('_', ' ')}</Badge>
+        </div>
+      ),
     },
     {
       key: 'acciones',
@@ -250,6 +257,17 @@ export function TransferenciasPage() {
             <Button size="sm" variant="ghost" onClick={() => setResolveTarget(t)} aria-label={`Resolver faltante ${t.id}`}>
               <RotateCcw className="h-4 w-4 text-amber-600" aria-hidden />
               Resolver
+            </Button>
+          )}
+          {t.detalleResolucion && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIncidentTarget(t)}
+              aria-label={`Ver descripción del incidente de la transferencia ${t.id}`}
+            >
+              <Eye className="h-4 w-4" aria-hidden />
+              Descripción
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={() => setEventsId(t.id)} aria-label={`Historial de la transferencia ${t.id}`}>
@@ -427,6 +445,15 @@ export function TransferenciasPage() {
       />
 
       <EventsModal id={eventsId} onClose={() => setEventsId(null)} />
+
+      <Modal
+        open={incidentTarget !== null}
+        onClose={() => setIncidentTarget(null)}
+        title={incidentTarget ? `Descripción del incidente · transferencia #${incidentTarget.id}` : 'Descripción del incidente'}
+        className="max-w-md"
+      >
+        <p className="whitespace-pre-wrap text-sm text-slate-700">{incidentTarget?.detalleResolucion}</p>
+      </Modal>
     </div>
   );
 }

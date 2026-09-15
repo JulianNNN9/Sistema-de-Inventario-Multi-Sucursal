@@ -32,6 +32,10 @@ export interface Transfer {
   fechaRealLlegada: string | null;
   /** El modelo no tiene un estado "APROBADA" propio: indica si, estando PENDIENTE, ya fue aprobada y está lista para despacho. */
   aprobada: boolean;
+  /** Descripción del incidente capturada al resolver un faltante; nulo si no aplica. */
+  detalleResolucion: string | null;
+  /** true si esta transferencia es el reenvío por faltante de otra. */
+  esReenvio: boolean;
 }
 
 export interface TransferRequestInput {

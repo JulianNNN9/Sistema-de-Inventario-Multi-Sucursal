@@ -69,3 +69,12 @@ export interface TransferEvent {
   fecha: string;
   comentario: string | null;
 }
+
+export interface Transportista {
+  id: number;
+  nombre: string;
+}
+
+export interface TransportistaInput {
+  nombre: string;
+}

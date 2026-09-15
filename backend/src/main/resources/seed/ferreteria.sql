@@ -482,6 +482,15 @@ WHERE producto_id = (SELECT id FROM producto WHERE sku = 'SEG-0001')
   AND sucursal_id = (SELECT id FROM sucursal WHERE nombre = 'Ferretería Central');
 
 -- ============================================================================
+-- 8a) Catálogo de transportistas (usados por las transferencias sembradas
+--     más abajo).
+-- ============================================================================
+INSERT INTO transportista (nombre) VALUES
+    ('Transportes Rápidos S.A.S.'),
+    ('Coordinadora Mercantil'),
+    ('Servientrega');
+
+-- ============================================================================
 -- 9) Transferencias históricas cubriendo los 8 estados de la Sección 3, cada
 --    una con su historial de eventos en transferencia_evento. No generan
 --    movimiento_inventario adicional (no afectan los niveles sembrados en las

@@ -20,6 +20,7 @@ import {
   PageHeader,
   Pagination,
   Select,
+  SearchSelect,
   Textarea,
   type Column,
 } from '../../../shared/components/ui';
@@ -32,8 +33,10 @@ import {
   requestTransfer,
   resolveTransfer,
 } from '../api/transferencias';
+import { createCarrier } from '../api/carriers';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useBranches } from '../../sucursales/hooks/useBranches';
+import { useCarriers } from '../hooks/useCarriers';
 import { useMutation } from '../../../shared/hooks/useMutation';
 import { useProductos } from '../../productos/hooks/useProductos';
 import { useTransferEvents } from '../hooks/useTransferEvents';
@@ -121,7 +124,10 @@ export function TransferenciasPage() {
   const approveM = useMutation(approveTransfer);
   const { showSuccess, showError } = useToast();
 
-  function canApprove(t: Transfer) {
+  // Antes de aprobar: Aprobar/Rechazar. Ya aprobada (pero aún no despachada):
+  // solo Cancelar (mismo endpoint que Rechazar) o Despachar — no tiene sentido
+  // seguir ofreciendo "Aprobar" sobre algo que ya se aprobó.
+  function canApproveOrReject(t: Transfer) {
     if (t.estado !== 'PENDIENTE') return false;
     return isAdmin || (rol === 'GERENTE_SUCURSAL' && sucursalId === t.sucursalOrigenId);
   }
@@ -145,12 +151,14 @@ export function TransferenciasPage() {
       showSuccess(
         approveTarget.aprobado
           ? `Transferencia #${approveTarget.transfer.id} aprobada.`
-          : `Transferencia #${approveTarget.transfer.id} rechazada.`,
+          : approveTarget.transfer.aprobada
+            ? `Transferencia #${approveTarget.transfer.id} cancelada.`
+            : `Transferencia #${approveTarget.transfer.id} rechazada.`,
       );
       setApproveTarget(null);
       refetch();
     } catch (err) {
-      showError((err as { message?: string }).message ?? 'No se pudo procesar la aprobación.');
+      showError((err as { message?: string }).message ?? 'No se pudo procesar la solicitud.');
       /* el error también se muestra en el ConfirmDialog */
     }
   }
@@ -204,27 +212,27 @@ export function TransferenciasPage() {
       align: 'right',
       render: (t) => (
         <div className="flex justify-end gap-1">
-          {canApprove(t) && (
-            <>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setApproveTarget({ transfer: t, aprobado: true })}
-                aria-label={`Aprobar transferencia ${t.id}`}
-              >
-                <Check className="h-4 w-4 text-emerald-600" aria-hidden />
-                Aprobar
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setApproveTarget({ transfer: t, aprobado: false })}
-                aria-label={`Rechazar transferencia ${t.id}`}
-              >
-                <X className="h-4 w-4 text-rose-500" aria-hidden />
-                Rechazar
-              </Button>
-            </>
+          {canApproveOrReject(t) && !t.aprobada && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setApproveTarget({ transfer: t, aprobado: true })}
+              aria-label={`Aprobar transferencia ${t.id}`}
+            >
+              <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+              Aprobar
+            </Button>
+          )}
+          {canApproveOrReject(t) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setApproveTarget({ transfer: t, aprobado: false })}
+              aria-label={t.aprobada ? `Cancelar transferencia ${t.id}` : `Rechazar transferencia ${t.id}`}
+            >
+              <X className="h-4 w-4 text-rose-500" aria-hidden />
+              {t.aprobada ? 'Cancelar' : 'Rechazar'}
+            </Button>
           )}
           {canDispatch(t) && (
             <Button size="sm" variant="ghost" onClick={() => setDispatchTarget(t)} aria-label={`Despachar transferencia ${t.id}`}>
@@ -365,13 +373,23 @@ export function TransferenciasPage() {
 
       <ConfirmDialog
         open={approveTarget !== null}
-        title={approveTarget?.aprobado ? 'Aprobar transferencia' : 'Rechazar transferencia'}
+        title={
+          approveTarget?.aprobado
+            ? 'Aprobar transferencia'
+            : approveTarget?.transfer.aprobada
+              ? 'Cancelar transferencia'
+              : 'Rechazar transferencia'
+        }
         message={
           approveTarget?.aprobado
             ? `¿Aprobar la transferencia #${approveTarget?.transfer.id}? Quedará disponible para que origen la despache.`
-            : `¿Rechazar la transferencia #${approveTarget?.transfer.id}? Esta acción es definitiva.`
+            : approveTarget?.transfer.aprobada
+              ? `¿Cancelar la transferencia #${approveTarget?.transfer.id}, ya aprobada? Esta acción es definitiva.`
+              : `¿Rechazar la transferencia #${approveTarget?.transfer.id}? Esta acción es definitiva.`
         }
-        confirmLabel={approveTarget?.aprobado ? 'Aprobar' : 'Rechazar'}
+        confirmLabel={
+          approveTarget?.aprobado ? 'Aprobar' : approveTarget?.transfer.aprobada ? 'Cancelar' : 'Rechazar'
+        }
         loading={approveM.submitting}
         error={approveM.error}
         onConfirm={handleApproveConfirm}
@@ -554,23 +572,41 @@ interface DispatchModalProps {
 function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
   const { mutate, submitting, error, resetError } = useMutation(dispatchTransfer);
   const { showSuccess, showError } = useToast();
+  const { carriers, loading: carriersLoading, refetch: refetchCarriers } = useCarriers();
   const [cantidadEnviada, setCantidadEnviada] = useState('');
-  const [transportista, setTransportista] = useState('');
+  const [transportistaId, setTransportistaId] = useState('');
   const [fecha, setFecha] = useState('');
   const [costo, setCosto] = useState('');
 
   useEffect(() => {
     setCantidadEnviada(transfer ? String(transfer.cantidadSolicitada) : '');
-    setTransportista('');
+    setTransportistaId('');
     setFecha('');
     setCosto('');
     resetError();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transfer?.id]);
 
+  const carrierOptions = useMemo(
+    () => carriers.map((c) => ({ value: c.id, label: c.nombre })),
+    [carriers],
+  );
+
+  async function handleCreateCarrier(nombre: string) {
+    try {
+      const created = await createCarrier({ nombre });
+      refetchCarriers();
+      return { value: created.id, label: created.nombre };
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo agregar el transportista.');
+      return undefined;
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!transfer || !fecha) return;
+    const transportista = carriers.find((c) => String(c.id) === transportistaId)?.nombre;
+    if (!transfer || !fecha || !transportista) return;
     try {
       await mutate(transfer.id, {
         cantidadEnviada: Number(cantidadEnviada),
@@ -615,11 +651,15 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
           onChange={(e) => setCantidadEnviada(e.target.value)}
           required
         />
-        <Input
+        <SearchSelect
           label="Transportista"
-          hint="Nombre de la persona o empresa encargada del traslado."
-          value={transportista}
-          onChange={(e) => setTransportista(e.target.value)}
+          hint="Busca un transportista ya registrado o agrega uno nuevo si no aparece."
+          value={transportistaId}
+          onChange={setTransportistaId}
+          options={carrierOptions}
+          loading={carriersLoading}
+          placeholder="Buscar transportista…"
+          onCreateOption={handleCreateCarrier}
           required
         />
         <Input
@@ -632,7 +672,7 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
         />
         <Input
           label="Costo del envío"
-          hint="Costo real del transporte; se usa para ordenar la bandeja por costo (RF-23)."
+          hint="Costo real del transporte; se usa para ordenar la bandeja por costo."
           type="number"
           step="0.01"
           min="0"
@@ -786,7 +826,7 @@ function ResolveModal({ transfer, onClose, onDone }: ResolveModalProps) {
           ]}
         />
         <Textarea
-          label="PQRS: ¿qué pasó?"
+          label="Descripción del incidente"
           hint="Describe qué ocurrió con el faltante y por qué se resuelve así. Queda registrado en el historial de la transferencia."
           rows={4}
           value={detalle}

@@ -50,4 +50,15 @@ public class CurrentUser {
                     "No tiene permisos para operar sobre datos de otra sucursal");
         }
     }
+
+    /**
+     * Verifica únicamente que haya un usuario autenticado con uno de los tres
+     * roles válidos, sin restringir por sucursal. La visibilidad de lectura
+     * entre sucursales es de red completa para los tres roles (Sección 2.1,
+     * RF-02); a diferencia de {@link #assertPuedeOperarSobreSucursal}, esta
+     * verificación no aplica al alcance de escritura.
+     */
+    public void assertPuedeVerSucursal(Long sucursalId) {
+        require();
+    }
 }

@@ -38,21 +38,20 @@ export function InventarioPage() {
   const puedeConfigurarMinimo = rol === 'ADMIN_GENERAL' || rol === 'GERENTE_SUCURSAL';
 
   const { branches, loading: branchesLoading, error: branchesError } = useBranches();
-  // GERENTE_SUCURSAL y OPERADOR_INVENTARIO no tienen visibilidad de red aquí:
-  // solo ven/operan su propia sucursal. Solo ADMIN_GENERAL puede elegir otra.
-  const [branchId, setBranchId] = useState<number | null>(
-    isAdmin ? sucursalId ?? null : sucursalId,
-  );
+  // Los tres roles tienen visibilidad de red completa para consultar
+  // inventario (RF-02); solo se preselecciona la sucursal propia como punto
+  // de partida. Las acciones de escritura siguen acotadas más abajo.
+  const [branchId, setBranchId] = useState<number | null>(sucursalId ?? null);
   const [page, setPage] = useState(0);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [soloBajoMinimo, setSoloBajoMinimo] = useState(false);
 
   useEffect(() => {
-    if (isAdmin && branchId === null && branches.length > 0) {
+    if (branchId === null && branches.length > 0) {
       setBranchId(branches[0].id);
     }
-  }, [isAdmin, branches, branchId]);
+  }, [branches, branchId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -119,8 +118,6 @@ export function InventarioPage() {
     value: b.id,
     label: b.ciudad ? `${b.nombre} — ${b.ciudad}` : b.nombre,
   }));
-  const propiaSucursal = branches.find((b) => b.id === sucursalId) ?? null;
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -137,22 +134,16 @@ export function InventarioPage() {
       />
 
       <div className="max-w-xs">
-        {isAdmin ? (
-          <Select
-            label="Sucursal"
-            value={branchId ?? ''}
-            onChange={(e) => {
-              setBranchId(e.target.value ? Number(e.target.value) : null);
-              setPage(0);
-            }}
-            options={branchOptions}
-            placeholder={branchesLoading ? 'Cargando…' : 'Selecciona una sucursal'}
-          />
-        ) : (
-          <p className="text-sm text-slate-500">
-            Sucursal: <span className="font-medium text-slate-800">{propiaSucursal?.nombre ?? '—'}</span>
-          </p>
-        )}
+        <Select
+          label="Sucursal"
+          value={branchId ?? ''}
+          onChange={(e) => {
+            setBranchId(e.target.value ? Number(e.target.value) : null);
+            setPage(0);
+          }}
+          options={branchOptions}
+          placeholder={branchesLoading ? 'Cargando…' : 'Selecciona una sucursal'}
+        />
       </div>
 
       {branchesError && <ErrorAlert message={branchesError} />}

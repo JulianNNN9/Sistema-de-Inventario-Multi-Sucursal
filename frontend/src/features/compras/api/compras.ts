@@ -8,6 +8,7 @@ interface ListParams {
   supplierId?: number;
   productId?: number;
   branchId?: number;
+  soloActivas?: boolean;
 }
 
 export async function listPurchaseOrders(
@@ -41,5 +42,10 @@ export async function createPurchaseOrder(body: PurchaseOrderInput): Promise<Pur
 
 export async function confirmReceipt(id: number): Promise<PurchaseOrder> {
   const { data } = await apiClient.post<PurchaseOrder>(`/purchase-orders/${id}/confirm-receipt`);
+  return data;
+}
+
+export async function cancelPurchaseOrder(id: number): Promise<PurchaseOrder> {
+  const { data } = await apiClient.post<PurchaseOrder>(`/purchase-orders/${id}/cancel`);
   return data;
 }

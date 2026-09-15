@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -39,6 +40,8 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class CompraService {
+
+    private static final BigDecimal CIEN = new BigDecimal("100");
 
     private final OrdenCompraRepository ordenCompraRepository;
     private final ProveedorService proveedorService;
@@ -82,12 +85,14 @@ public class CompraService {
         return toResponse(orden);
     }
 
+    /** {@code soloActivas}: true = solo PENDIENTES (vista principal); false = histórico (RECIBIDA/CANCELADA). */
     @Transactional(readOnly = true)
     public PageResponse<PurchaseOrderSummaryResponse> listar(Long supplierId, Long productId,
-                                                             Long branchIdParam, Pageable pageable) {
+                                                             Long branchIdParam, boolean soloActivas,
+                                                             Pageable pageable) {
         Long branchId = currentUser.isAdmin() ? branchIdParam : currentUser.sucursalId();
         return PageResponse.from(
-                ordenCompraRepository.searchSummaries(supplierId, branchId, productId, pageable));
+                ordenCompraRepository.searchSummaries(supplierId, branchId, productId, soloActivas, pageable));
     }
 
     /**
@@ -119,15 +124,32 @@ public class CompraService {
 
         Long responsableId = currentUser.usuarioId();
         for (OrdenCompraDetalle detalle : orden.getDetalles()) {
+            BigDecimal costoNeto = subtotalNeto(detalle.getCantidad(), detalle.getPrecioUnitario(), detalle.getDescuento());
+            BigDecimal precioUnitarioNeto = costoNeto.divide(detalle.getCantidad(), 2, RoundingMode.HALF_UP);
             inventarioService.registrarIngresoPorCompra(
                     detalle.getProducto(),
                     orden.getSucursal(),
                     detalle.getCantidad(),
-                    detalle.getPrecioUnitario(),
+                    precioUnitarioNeto,
                     responsableId);
         }
 
         orden.setEstado(EstadoOrdenCompra.RECIBIDA);
+        return toResponse(ordenCompraRepository.save(orden));
+    }
+
+    /** Solo se puede cancelar una orden PENDIENTE: una RECIBIDA ya movió inventario, una CANCELADA no se repite. */
+    @Transactional
+    public PurchaseOrderResponse cancelar(Long id) {
+        OrdenCompra orden = cargarConAcceso(id);
+        currentUser.assertPuedeOperarSobreSucursal(orden.getSucursal().getId());
+
+        if (orden.getEstado() != EstadoOrdenCompra.PENDIENTE) {
+            throw new ConflictoEstadoException(
+                    "La orden de compra está en estado " + orden.getEstado() + " y no puede cancelarse");
+        }
+
+        orden.setEstado(EstadoOrdenCompra.CANCELADA);
         return toResponse(ordenCompraRepository.save(orden));
     }
 
@@ -155,6 +177,13 @@ public class CompraService {
         return propia;
     }
 
+    /** Subtotal neto de una línea: {@code cantidad * precioUnitario * (1 - descuento / 100)}. */
+    private BigDecimal subtotalNeto(BigDecimal cantidad, BigDecimal precioUnitario, BigDecimal descuento) {
+        BigDecimal bruto = cantidad.multiply(precioUnitario);
+        BigDecimal factor = BigDecimal.ONE.subtract(descuento.divide(CIEN, 6, RoundingMode.HALF_UP));
+        return bruto.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+    }
+
     private PurchaseOrderResponse toResponse(OrdenCompra orden) {
         List<PurchaseOrderLineResponse> lineas = orden.getDetalles().stream()
                 .map(d -> new PurchaseOrderLineResponse(
@@ -164,7 +193,7 @@ public class CompraService {
                         d.getCantidad(),
                         d.getPrecioUnitario(),
                         d.getDescuento(),
-                        d.getCantidad().multiply(d.getPrecioUnitario())))
+                        subtotalNeto(d.getCantidad(), d.getPrecioUnitario(), d.getDescuento())))
                 .toList();
 
         BigDecimal total = lineas.stream()

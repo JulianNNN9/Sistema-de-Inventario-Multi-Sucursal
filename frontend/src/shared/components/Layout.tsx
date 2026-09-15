@@ -54,6 +54,10 @@ export function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const items = NAV_ITEMS.filter((item) => !item.roles || (rol !== null && item.roles.includes(rol)));
+  // Excepción: la tabla de transferencias tiene más columnas (incl. varias
+  // acciones por fila) que el resto de vistas y no cabe en max-w-6xl sin
+  // esconder el botón de Historial; esta ruta usa un contenedor más ancho.
+  const isWideRoute = location.pathname.startsWith('/transfers');
 
   const nav = (
     <div className="flex h-full flex-col gap-1 p-4">
@@ -150,7 +154,7 @@ export function Layout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <main className={cn('mx-auto px-4 py-6 sm:px-6 lg:px-8', isWideRoute ? 'max-w-7xl' : 'max-w-6xl')}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

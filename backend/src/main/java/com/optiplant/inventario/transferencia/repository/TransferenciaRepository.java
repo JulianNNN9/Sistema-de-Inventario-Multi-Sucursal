@@ -26,15 +26,24 @@ public interface TransferenciaRepository extends JpaRepository<Transferencia, Lo
     @EntityGraph(attributePaths = {"producto", "sucursalOrigen", "sucursalDestino"})
     Optional<Transferencia> findById(Long id);
 
-    /** Bandeja de transferencias (RF-24), filtrada por estado/sucursal; el orden lo aporta el Pageable. */
+    /**
+     * Bandeja de transferencias (RF-24), filtrada por estado/sucursal; el orden lo
+     * aporta el Pageable. {@code soloActivas} alterna entre las que aún requieren
+     * alguna acción y las que ya terminaron definitivamente (Sección 3,
+     * {@link EstadoTransferencia#NO_TERMINALES}).
+     */
     @EntityGraph(attributePaths = {"producto", "sucursalOrigen", "sucursalDestino"})
     @Query("""
             select t from Transferencia t
             where t.estado = coalesce(:estado, t.estado)
               and (:branchId is null or t.sucursalOrigen.id = :branchId or t.sucursalDestino.id = :branchId)
+              and (:soloActivas = false or t.estado in :estadosNoTerminales)
+              and (:soloActivas = true or t.estado not in :estadosNoTerminales)
             """)
     Page<Transferencia> search(@Param("estado") EstadoTransferencia estado,
                                @Param("branchId") Long branchId,
+                               @Param("soloActivas") boolean soloActivas,
+                               @Param("estadosNoTerminales") List<EstadoTransferencia> estadosNoTerminales,
                                Pageable pageable);
 
     /**
@@ -47,10 +56,14 @@ public interface TransferenciaRepository extends JpaRepository<Transferencia, Lo
             select t from Transferencia t
             where t.estado = coalesce(:estado, t.estado)
               and (:branchId is null or t.sucursalOrigen.id = :branchId or t.sucursalDestino.id = :branchId)
+              and (:soloActivas = false or t.estado in :estadosNoTerminales)
+              and (:soloActivas = true or t.estado not in :estadosNoTerminales)
             order by case t.urgencia when 'ALTA' then 0 when 'MEDIA' then 1 else 2 end
             """)
     Page<Transferencia> searchOrderByPriority(@Param("estado") EstadoTransferencia estado,
                                               @Param("branchId") Long branchId,
+                                              @Param("soloActivas") boolean soloActivas,
+                                              @Param("estadosNoTerminales") List<EstadoTransferencia> estadosNoTerminales,
                                               Pageable pageable);
 
     /**

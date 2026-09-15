@@ -2,10 +2,7 @@ package com.optiplant.inventario.compra.dto;
 
 import java.math.BigDecimal;
 
-/**
- * Línea de una orden de compra en la respuesta. {@code subtotal} = bruto
- * ({@code cantidad * precioUnitario}); el {@code descuento} (%) se muestra aparte.
- */
+/** Línea de una orden de compra en la respuesta. {@code subtotal} = neto (con descuento aplicado). */
 public record PurchaseOrderLineResponse(
         Long productId,
         String sku,

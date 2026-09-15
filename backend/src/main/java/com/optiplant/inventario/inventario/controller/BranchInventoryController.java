@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -31,7 +32,10 @@ public class BranchInventoryController {
 
     @GetMapping("/{branchId}/inventory")
     public PageResponse<InventarioResponse> inventarioDeSucursal(
-            @PathVariable Long branchId, @PageableDefault(size = 20) Pageable pageable) {
-        return inventarioService.listarInventarioSucursal(branchId, pageable);
+            @PathVariable Long branchId,
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "soloBajoMinimo", required = false, defaultValue = "false") boolean soloBajoMinimo,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return inventarioService.listarInventarioSucursal(branchId, search, soloBajoMinimo, pageable);
     }
 }

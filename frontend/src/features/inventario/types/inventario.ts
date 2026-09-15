@@ -47,8 +47,12 @@ export interface MinStockInput {
   branchId?: number;
 }
 
-/** Motivos válidos por tipo en el endpoint manual (los TRANSFERENCIA_* los usa solo el Módulo 4). */
+/**
+ * Motivos válidos por tipo en el endpoint manual (los TRANSFERENCIA_* los usa
+ * solo el Módulo 4). COMPRA y VENTA se excluyen aquí a propósito: se generan
+ * automáticamente desde Compras y Ventas respectivamente, no se registran a mano.
+ */
 export const MOTIVOS_POR_TIPO: Record<TipoMovimiento, MotivoMovimiento[]> = {
-  INGRESO: ['COMPRA', 'DEVOLUCION', 'AJUSTE'],
-  RETIRO: ['VENTA', 'MERMA', 'AJUSTE'],
+  INGRESO: ['DEVOLUCION', 'AJUSTE'],
+  RETIRO: ['MERMA', 'AJUSTE'],
 };

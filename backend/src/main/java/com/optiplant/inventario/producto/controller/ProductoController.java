@@ -42,8 +42,9 @@ public class ProductoController {
     @PreAuthorize("hasAnyRole('ADMIN_GENERAL','GERENTE_SUCURSAL','OPERADOR_INVENTARIO')")
     public PageResponse<ProductoResponse> listar(
             @RequestParam(name = "branchId", required = false) Long branchId,
+            @RequestParam(name = "search", required = false) String search,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        return productoService.listar(branchId, pageable);
+        return productoService.listar(branchId, search, pageable);
     }
 
     @PostMapping

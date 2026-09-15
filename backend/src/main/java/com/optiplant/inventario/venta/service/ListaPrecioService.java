@@ -12,6 +12,7 @@ import com.optiplant.inventario.venta.dto.PriceListItemRequest;
 import com.optiplant.inventario.venta.dto.PriceListItemResponse;
 import com.optiplant.inventario.venta.dto.PriceListRequest;
 import com.optiplant.inventario.venta.dto.PriceListResponse;
+import com.optiplant.inventario.venta.dto.PriceListUpdateRequest;
 import com.optiplant.inventario.venta.entity.ListaPrecio;
 import com.optiplant.inventario.venta.entity.ListaPrecioDetalle;
 import com.optiplant.inventario.venta.repository.ListaPrecioDetalleRepository;
@@ -70,6 +71,51 @@ public class ListaPrecioService {
     public PageResponse<PriceListResponse> listar(Pageable pageable) {
         Long scope = currentUser.isAdmin() ? null : currentUser.sucursalId();
         return PageResponse.from(listaPrecioRepository.findVisibles(scope, pageable).map(this::toResponse));
+    }
+
+    /**
+     * No-admin solo modifica listas de su propia sucursal (igual que al crear);
+     * las globales (RF-15) son política de red y quedan reservadas a ADMIN_GENERAL.
+     */
+    @Transactional
+    public PriceListResponse actualizar(Long id, PriceListUpdateRequest request) {
+        ListaPrecio lista = getEntityById(id);
+        assertPuedeGestionar(lista);
+
+        lista.setNombre(request.nombre());
+
+        listaPrecioDetalleRepository.deleteAll(lista.getDetalles());
+        lista.getDetalles().clear();
+
+        Set<Long> productosVistos = new HashSet<>();
+        for (PriceListItemRequest item : request.items()) {
+            Producto producto = productoService.getEntityById(item.productId());
+            if (!productosVistos.add(item.productId())) {
+                throw new ValidacionException(
+                        "El producto \"" + producto.getNombre() + "\" está repetido en la lista");
+            }
+            lista.addDetalle(ListaPrecioDetalle.builder()
+                    .producto(producto)
+                    .precio(item.precio())
+                    .build());
+        }
+
+        return toResponse(listaPrecioRepository.save(lista));
+    }
+
+    private ListaPrecio getEntityById(Long id) {
+        return listaPrecioRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Lista de precios", id));
+    }
+
+    private void assertPuedeGestionar(ListaPrecio lista) {
+        if (currentUser.isAdmin()) {
+            return;
+        }
+        Sucursal sucursal = lista.getSucursal();
+        if (sucursal == null || !sucursal.getId().equals(currentUser.sucursalId())) {
+            throw new AccessDeniedException("No puede modificar esta lista de precios");
+        }
     }
 
     /** Precio de un producto en una lista (RF-15). Usado por {@code VentaService}. */

@@ -3,6 +3,7 @@ export { Card } from './Card';
 export { Input } from './Input';
 export { Textarea } from './Textarea';
 export { Select, type SelectOption } from './Select';
+export { SearchSelect, type SearchSelectOption } from './SearchSelect';
 export { Skeleton } from './Skeleton';
 export { Badge } from './Badge';
 export { Spinner } from './Spinner';

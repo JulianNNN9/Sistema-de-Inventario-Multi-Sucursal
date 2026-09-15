@@ -24,6 +24,11 @@ export interface PriceListInput {
   items: PriceListItemInput[];
 }
 
+export interface PriceListUpdateInput {
+  nombre: string;
+  items: PriceListItemInput[];
+}
+
 export interface SaleLineInput {
   productId: number;
   cantidad: number;

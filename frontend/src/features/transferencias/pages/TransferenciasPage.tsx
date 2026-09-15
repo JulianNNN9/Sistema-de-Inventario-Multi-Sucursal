@@ -20,8 +20,10 @@ import {
   PageHeader,
   Pagination,
   Select,
+  Textarea,
   type Column,
 } from '../../../shared/components/ui';
+import { cn } from '../../../shared/lib/cn';
 import { ErrorAlert } from '../../../shared/components/ErrorAlert';
 import {
   approveTransfer,
@@ -98,6 +100,7 @@ export function TransferenciasPage() {
   const [estado, setEstado] = useState('');
   const [filterBranch, setFilterBranch] = useState('');
   const [sort, setSort] = useState('');
+  const [soloActivas, setSoloActivas] = useState(true);
 
   const { data, loading, error, refetch } = useTransferenciasList({
     page,
@@ -105,6 +108,7 @@ export function TransferenciasPage() {
     estado: (estado || undefined) as EstadoTransferencia | undefined,
     branchId: filterBranch ? Number(filterBranch) : undefined,
     sort: (sort || undefined) as TransferSort | undefined,
+    soloActivas,
   });
 
   const [requestOpen, setRequestOpen] = useState(false);
@@ -122,7 +126,7 @@ export function TransferenciasPage() {
     return isAdmin || (rol === 'GERENTE_SUCURSAL' && sucursalId === t.sucursalOrigenId);
   }
   function canDispatch(t: Transfer) {
-    if (t.estado !== 'PENDIENTE') return false;
+    if (t.estado !== 'PENDIENTE' || !t.aprobada) return false;
     return isAdmin || sucursalId === t.sucursalOrigenId;
   }
   function canReceive(t: Transfer) {
@@ -160,13 +164,23 @@ export function TransferenciasPage() {
       key: 'cantidad',
       header: 'Cant.',
       align: 'right',
-      render: (t) => (
-        <span title="Solicitada / enviada / recibida">
-          {formatNumber(t.cantidadSolicitada)}
-          {t.cantidadEnviada !== null && ` / ${formatNumber(t.cantidadEnviada)}`}
-          {t.cantidadRecibida !== null && ` / ${formatNumber(t.cantidadRecibida)}`}
-        </span>
-      ),
+      render: (t) => {
+        if (t.cantidadRecibida !== null) {
+          return (
+            <span title="Enviada / recibida">
+              {formatNumber(t.cantidadEnviada ?? 0)} / {formatNumber(t.cantidadRecibida)}
+            </span>
+          );
+        }
+        if (t.cantidadEnviada !== null) {
+          return (
+            <span title="Solicitada / enviada">
+              {formatNumber(t.cantidadSolicitada)} / {formatNumber(t.cantidadEnviada)}
+            </span>
+          );
+        }
+        return <span title="Solicitada">{formatNumber(t.cantidadSolicitada)}</span>;
+      },
     },
     {
       key: 'costo',
@@ -287,6 +301,37 @@ export function TransferenciasPage() {
           options={SORT_OPTIONS}
           placeholder="Por defecto"
         />
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-slate-700">Vista</span>
+          <div className="inline-flex w-fit rounded-xl border border-slate-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setSoloActivas(true);
+                setPage(0);
+              }}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                soloActivas ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50',
+              )}
+            >
+              Requieren acción
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSoloActivas(false);
+                setPage(0);
+              }}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                !soloActivas ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50',
+              )}
+            >
+              Terminadas
+            </button>
+          </div>
+        </div>
       </div>
 
       {error && <ErrorAlert message={error} />}
@@ -678,9 +723,11 @@ function ResolveModal({ transfer, onClose, onDone }: ResolveModalProps) {
   const { mutate, submitting, error, resetError } = useMutation(resolveTransfer);
   const { showSuccess, showError } = useToast();
   const [tratamiento, setTratamiento] = useState<TratamientoFaltante>('REENVIO');
+  const [detalle, setDetalle] = useState('');
 
   useEffect(() => {
     setTratamiento('REENVIO');
+    setDetalle('');
     resetError();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transfer?.id]);
@@ -689,7 +736,7 @@ function ResolveModal({ transfer, onClose, onDone }: ResolveModalProps) {
     event.preventDefault();
     if (!transfer) return;
     try {
-      await mutate(transfer.id, { tratamiento });
+      await mutate(transfer.id, { tratamiento, detalle });
       showSuccess(`Faltante de la transferencia #${transfer.id} resuelto.`);
       onDone();
     } catch (err) {
@@ -737,6 +784,15 @@ function ResolveModal({ transfer, onClose, onDone }: ResolveModalProps) {
             { value: 'AJUSTE', label: 'Ajuste (cerrar y asumir la pérdida)' },
             { value: 'RECLAMACION', label: 'Reclamación formal a origen' },
           ]}
+        />
+        <Textarea
+          label="PQRS: ¿qué pasó?"
+          hint="Describe qué ocurrió con el faltante y por qué se resuelve así. Queda registrado en el historial de la transferencia."
+          rows={4}
+          value={detalle}
+          onChange={(e) => setDetalle(e.target.value)}
+          required
+          placeholder="Ej: el transportista reporta un paquete dañado en ruta…"
         />
       </form>
     </Modal>

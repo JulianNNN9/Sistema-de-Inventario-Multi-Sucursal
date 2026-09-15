@@ -113,7 +113,7 @@ class InventarioServiceTest {
 
         assertThrows(StockInsuficienteException.class,
                 () -> inventarioService.registrarMovimiento(
-                        request(TipoMovimiento.RETIRO, MotivoMovimiento.VENTA, "10")));
+                        request(TipoMovimiento.RETIRO, MotivoMovimiento.MERMA, "10")));
 
         assertEquals(0, inventario.getCantidadActual().compareTo(new BigDecimal("3")));
         verify(movimientoRepository, never()).save(any());
@@ -147,6 +147,22 @@ class InventarioServiceTest {
     }
 
     @Test
+    void motivoCompra_esRechazadoEnRegistroManual() {
+        assertThrows(ValidacionException.class,
+                () -> inventarioService.registrarMovimiento(
+                        request(TipoMovimiento.INGRESO, MotivoMovimiento.COMPRA, "5")));
+        verify(movimientoRepository, never()).save(any());
+    }
+
+    @Test
+    void motivoVenta_esRechazadoEnRegistroManual() {
+        assertThrows(ValidacionException.class,
+                () -> inventarioService.registrarMovimiento(
+                        request(TipoMovimiento.RETIRO, MotivoMovimiento.VENTA, "5")));
+        verify(movimientoRepository, never()).save(any());
+    }
+
+    @Test
     void primerMovimientoDeUnParProductoSucursal_creaInventarioEnCero() {
         when(currentUser.usuarioId()).thenReturn(7L);
         when(productoRepository.findById(10L)).thenReturn(java.util.Optional.of(producto));
@@ -156,8 +172,8 @@ class InventarioServiceTest {
         when(inventarioRepository.save(any(InventarioSucursal.class))).thenAnswer(i -> i.getArgument(0));
         when(movimientoRepository.save(any(MovimientoInventario.class))).thenAnswer(i -> i.getArgument(0));
 
-        MovimientoResponse response =
-                inventarioService.registrarMovimiento(request(TipoMovimiento.INGRESO, MotivoMovimiento.COMPRA, "20"));
+        MovimientoResponse response = inventarioService.registrarMovimiento(
+                request(TipoMovimiento.INGRESO, MotivoMovimiento.DEVOLUCION, "20"));
 
         assertEquals(0, response.cantidadActual().compareTo(new BigDecimal("20")));
     }

@@ -8,6 +8,7 @@ import {
   PageHeader,
   Pagination,
   Select,
+  SearchSelect,
   DataTable,
   EmptyState,
   type Column,
@@ -25,11 +26,11 @@ import {
   MOTIVOS_POR_TIPO,
   type InventarioSucursal,
   type MotivoMovimiento,
-  type MovimientoResultado,
   type TipoMovimiento,
 } from '../types/inventario';
 
 const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function InventarioPage() {
   const { rol, sucursalId } = useAuth();
@@ -43,6 +44,9 @@ export function InventarioPage() {
     isAdmin ? sucursalId ?? null : sucursalId,
   );
   const [page, setPage] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [soloBajoMinimo, setSoloBajoMinimo] = useState(false);
 
   useEffect(() => {
     if (isAdmin && branchId === null && branches.length > 0) {
@@ -50,7 +54,21 @@ export function InventarioPage() {
     }
   }, [isAdmin, branches, branchId]);
 
-  const { data, loading, error, refetch } = useBranchInventory({ branchId, page, size: PAGE_SIZE });
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(0);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const { data, loading, error, refetch } = useBranchInventory({
+    branchId,
+    page,
+    size: PAGE_SIZE,
+    search: search || undefined,
+    soloBajoMinimo,
+  });
 
   const puedeEditar = branchId !== null && (isAdmin || branchId === sucursalId);
 
@@ -140,6 +158,28 @@ export function InventarioPage() {
       {branchesError && <ErrorAlert message={branchesError} />}
       {error && <ErrorAlert message={error} />}
 
+      <div className="flex flex-wrap items-end gap-3">
+        <Input
+          aria-label="Buscar por SKU o nombre de producto"
+          placeholder="Buscar por SKU o nombre…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="max-w-sm"
+        />
+        <label className="flex h-10 items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            checked={soloBajoMinimo}
+            onChange={(e) => {
+              setSoloBajoMinimo(e.target.checked);
+              setPage(0);
+            }}
+          />
+          Solo bajo el mínimo
+        </label>
+      </div>
+
       <DataTable
         columns={columns}
         rows={data?.content ?? []}
@@ -188,12 +228,12 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
     enabled: open,
   });
   const { mutate, submitting, error, resetError } = useMutation(registerMovement);
+  const { showSuccess, showError } = useToast();
 
   const [productId, setProductId] = useState('');
   const [tipo, setTipo] = useState<TipoMovimiento>('INGRESO');
   const [motivo, setMotivo] = useState<MotivoMovimiento>('AJUSTE');
   const [cantidad, setCantidad] = useState('');
-  const [resultado, setResultado] = useState<MovimientoResultado | null>(null);
 
   const motivosDisponibles = MOTIVOS_POR_TIPO[tipo];
 
@@ -203,7 +243,6 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
       setTipo('INGRESO');
       setMotivo('AJUSTE');
       setCantidad('');
-      setResultado(null);
       resetError();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -232,11 +271,15 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
         motivo,
         cantidad: Number(cantidad),
       });
-      setResultado(res);
-      setCantidad('');
+      showSuccess(`Movimiento registrado. Existencia actual: ${formatNumber(res.cantidadActual)}.`);
+      if (res.alertaStockBajo) {
+        showError('Por debajo del stock mínimo.');
+      }
       onRegistered();
-    } catch {
-      /* error mostrado en el modal */
+      onClose();
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo registrar el movimiento.');
+      /* el error también se muestra en el modal */
     }
   }
 
@@ -259,13 +302,14 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
       <form id="movement-form" onSubmit={handleSubmit} className="space-y-4">
         {error && <ErrorAlert message={error} />}
 
-        <Select
+        <SearchSelect
           label="Producto"
-          hint="Producto sobre el que se registrará el movimiento en esta sucursal."
+          hint="Busca por SKU o nombre del producto sobre el que se registrará el movimiento."
           value={productId}
-          onChange={(e) => setProductId(e.target.value)}
+          onChange={setProductId}
           options={productOptions}
-          placeholder={productosLoading ? 'Cargando…' : 'Selecciona un producto'}
+          placeholder="Buscar por SKU o nombre…"
+          loading={productosLoading}
           required
         />
 
@@ -299,14 +343,6 @@ function MovementModal({ open, branchId, onClose, onRegistered }: MovementModalP
           onChange={(e) => setCantidad(e.target.value)}
           required
         />
-
-        {resultado && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800">
-            Movimiento registrado. Existencia actual:{' '}
-            <span className="font-semibold">{formatNumber(resultado.cantidadActual)}</span>
-            {resultado.alertaStockBajo && ' · por debajo del stock mínimo'}
-          </div>
-        )}
       </form>
     </Modal>
   );

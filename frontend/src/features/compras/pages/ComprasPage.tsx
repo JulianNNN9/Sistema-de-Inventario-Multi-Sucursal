@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { CheckCircle2, Eye, Plus, Trash2, Truck } from 'lucide-react';
+import { Ban, CheckCircle2, Eye, Plus, Trash2, Truck } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -15,7 +15,7 @@ import {
   type Column,
 } from '../../../shared/components/ui';
 import { ErrorAlert } from '../../../shared/components/ErrorAlert';
-import { confirmReceipt, createPurchaseOrder } from '../api/compras';
+import { cancelPurchaseOrder, confirmReceipt, createPurchaseOrder } from '../api/compras';
 import { createSupplier, updateSupplier } from '../api/proveedores';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useBranches } from '../../sucursales/hooks/useBranches';
@@ -60,6 +60,7 @@ export function ComprasPage() {
   const [supplierId, setSupplierId] = useState('');
   const [productId, setProductId] = useState('');
   const [branchId, setBranchId] = useState('');
+  const [soloActivas, setSoloActivas] = useState(true);
 
   const { data, loading, error, refetch } = useComprasList({
     page,
@@ -67,6 +68,7 @@ export function ComprasPage() {
     supplierId: supplierId ? Number(supplierId) : undefined,
     productId: productId ? Number(productId) : undefined,
     branchId: branchId ? Number(branchId) : undefined,
+    soloActivas,
     enabled: canManage,
   });
 
@@ -74,8 +76,10 @@ export function ComprasPage() {
   const [suppliersOpen, setSuppliersOpen] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [receiptTarget, setReceiptTarget] = useState<PurchaseOrderSummary | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<PurchaseOrderSummary | null>(null);
 
   const receiptM = useMutation(confirmReceipt);
+  const cancelM = useMutation(cancelPurchaseOrder);
   const { showSuccess, showError } = useToast();
 
   async function handleConfirmReceipt() {
@@ -87,6 +91,19 @@ export function ComprasPage() {
       refetch();
     } catch (err) {
       showError((err as { message?: string }).message ?? 'No se pudo confirmar la recepción.');
+      /* el error también se muestra en el ConfirmDialog */
+    }
+  }
+
+  async function handleCancel() {
+    if (!cancelTarget) return;
+    try {
+      await cancelM.mutate(cancelTarget.id);
+      showSuccess(`Orden de compra #${cancelTarget.id} cancelada.`);
+      setCancelTarget(null);
+      refetch();
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo cancelar la orden.');
       /* el error también se muestra en el ConfirmDialog */
     }
   }
@@ -117,6 +134,17 @@ export function ComprasPage() {
             >
               <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
               Confirmar recepción
+            </Button>
+          )}
+          {canManage && o.estado === 'PENDIENTE' && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setCancelTarget(o)}
+              aria-label={`Cancelar la orden ${o.id}`}
+            >
+              <Ban className="h-4 w-4 text-rose-500" aria-hidden />
+              Cancelar
             </Button>
           )}
         </div>
@@ -188,6 +216,37 @@ export function ComprasPage() {
             placeholder="Todas"
           />
         )}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-slate-700">Vista</span>
+          <div className="inline-flex w-fit rounded-xl border border-slate-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setSoloActivas(true);
+                setPage(0);
+              }}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                soloActivas ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50',
+              )}
+            >
+              Activas
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSoloActivas(false);
+                setPage(0);
+              }}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                !soloActivas ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50',
+              )}
+            >
+              Histórico
+            </button>
+          </div>
+        </div>
       </div>
 
       {error && <ErrorAlert message={error} />}
@@ -249,6 +308,20 @@ export function ComprasPage() {
         onCancel={() => {
           setReceiptTarget(null);
           receiptM.resetError();
+        }}
+      />
+
+      <ConfirmDialog
+        open={cancelTarget !== null}
+        title="Cancelar orden de compra"
+        message={`¿Cancelar la orden #${cancelTarget?.id ?? ''}? Esta acción no se puede deshacer.`}
+        confirmLabel="Cancelar orden"
+        loading={cancelM.submitting}
+        error={cancelM.error}
+        onConfirm={handleCancel}
+        onCancel={() => {
+          setCancelTarget(null);
+          cancelM.resetError();
         }}
       />
     </div>
@@ -566,6 +639,7 @@ interface OrderDetailModalProps {
 function OrderDetailModal({ id, canManage, onClose, onReceived }: OrderDetailModalProps) {
   const { order, loading, error } = usePurchaseOrder(id);
   const receiptM = useMutation(confirmReceipt);
+  const cancelM = useMutation(cancelPurchaseOrder);
   const { showSuccess, showError } = useToast();
 
   async function handleReceipt() {
@@ -580,6 +654,18 @@ function OrderDetailModal({ id, canManage, onClose, onReceived }: OrderDetailMod
     }
   }
 
+  async function handleCancel() {
+    if (!order) return;
+    try {
+      await cancelM.mutate(order.id);
+      showSuccess(`Orden de compra #${order.id} cancelada.`);
+      onReceived();
+    } catch (err) {
+      showError((err as { message?: string }).message ?? 'No se pudo cancelar la orden.');
+      /* el error también se muestra en el modal */
+    }
+  }
+
   return (
     <Modal
       open={id !== null}
@@ -588,16 +674,23 @@ function OrderDetailModal({ id, canManage, onClose, onReceived }: OrderDetailMod
       className="max-w-2xl"
       footer={
         canManage && order?.estado === 'PENDIENTE' ? (
-          <Button variant="primary" onClick={handleReceipt} loading={receiptM.submitting}>
-            <CheckCircle2 className="h-4 w-4" aria-hidden />
-            Confirmar recepción
-          </Button>
+          <>
+            <Button variant="secondary" onClick={handleCancel} loading={cancelM.submitting}>
+              <Ban className="h-4 w-4" aria-hidden />
+              Cancelar orden
+            </Button>
+            <Button variant="primary" onClick={handleReceipt} loading={receiptM.submitting}>
+              <CheckCircle2 className="h-4 w-4" aria-hidden />
+              Confirmar recepción
+            </Button>
+          </>
         ) : undefined
       }
     >
       {loading && <p className="text-sm text-slate-500">Cargando…</p>}
       {error && <ErrorAlert message={error} />}
       {receiptM.error && <ErrorAlert message={receiptM.error} className="mt-2" />}
+      {cancelM.error && <ErrorAlert message={cancelM.error} className="mt-2" />}
 
       {order && (
         <div className="space-y-4">

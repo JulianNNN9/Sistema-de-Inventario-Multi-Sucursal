@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -84,8 +85,18 @@ public class ListaPrecioService {
 
         lista.setNombre(request.nombre());
 
-        listaPrecioDetalleRepository.deleteAll(lista.getDetalles());
+        // El orden importa: hay que desvincular los detalles viejos de la
+        // colección del padre ANTES de borrarlos y hacer flush(). Si siguen
+        // referenciados en lista.getDetalles() al momento del flush, Hibernate
+        // los reconcilia con esa colección y deshace el remove(); y si el
+        // flush no se fuerza aquí, Hibernate ordena los INSERT de los ítems
+        // nuevos antes que estos DELETE dentro del mismo ciclo, chocando con
+        // uq_lpd_lista_producto cuando un productId se repite entre la lista
+        // vieja y la nueva.
+        List<ListaPrecioDetalle> detallesAnteriores = new ArrayList<>(lista.getDetalles());
         lista.getDetalles().clear();
+        listaPrecioDetalleRepository.deleteAll(detallesAnteriores);
+        listaPrecioDetalleRepository.flush();
 
         Set<Long> productosVistos = new HashSet<>();
         for (PriceListItemRequest item : request.items()) {

@@ -20,6 +20,7 @@ import com.optiplant.inventario.transferencia.entity.Transferencia;
 import com.optiplant.inventario.transferencia.entity.Urgencia;
 import com.optiplant.inventario.transferencia.repository.TransferenciaEventoRepository;
 import com.optiplant.inventario.transferencia.repository.TransferenciaRepository;
+import com.optiplant.inventario.transferencia.repository.TransportistaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -57,6 +58,8 @@ class TransferenciaServiceTest {
     private TransferenciaRepository transferenciaRepository;
     @Mock
     private TransferenciaEventoRepository transferenciaEventoRepository;
+    @Mock
+    private TransportistaRepository transportistaRepository;
     @Mock
     private ProductoService productoService;
     @Mock
@@ -196,6 +199,7 @@ class TransferenciaServiceTest {
     void despachar_ok_aplicaSalidaYPasaAEnTransito() {
         when(transferenciaRepository.findById(99L)).thenReturn(Optional.of(transferenciaEn(EstadoTransferencia.PENDIENTE)));
         when(transferenciaEventoRepository.existsByTransferenciaIdAndComentario(eq(99L), any())).thenReturn(true);
+        when(transportistaRepository.existsByNombreIgnoreCase("Transportes XYZ")).thenReturn(true);
         when(currentUser.usuarioId()).thenReturn(7L);
         when(transferenciaRepository.save(any(Transferencia.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -209,6 +213,19 @@ class TransferenciaServiceTest {
         assertEquals(0, response.costo().compareTo(new BigDecimal("85000")));
         verify(inventarioService).registrarSalidaPorTransferencia(
                 eq(producto), eq(origen), eq(new BigDecimal("15")), eq(7L));
+    }
+
+    @Test
+    void despachar_transportistaFueraDelCatalogo_lanzaValidacionYNoDescuentaStock() {
+        when(transferenciaRepository.findById(99L)).thenReturn(Optional.of(transferenciaEn(EstadoTransferencia.PENDIENTE)));
+        when(transferenciaEventoRepository.existsByTransferenciaIdAndComentario(eq(99L), any())).thenReturn(true);
+        when(transportistaRepository.existsByNombreIgnoreCase("Inventado S.A.S.")).thenReturn(false);
+
+        DispatchRequest request = new DispatchRequest(
+                new BigDecimal("15"), "Inventado S.A.S.", Instant.parse("2026-09-20T00:00:00Z"), new BigDecimal("85000"));
+
+        assertThrows(ValidacionException.class, () -> transferenciaService.despachar(99L, request));
+        verify(inventarioService, never()).registrarSalidaPorTransferencia(any(), any(), any(), any());
     }
 
     // --- recibir (RF-20, RF-21) -------------------------------------------------------

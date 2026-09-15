@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, Plus } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
 export interface SearchSelectOption {
@@ -20,6 +20,15 @@ interface SearchSelectProps {
   disabled?: boolean;
   required?: boolean;
   emptyMessage?: string;
+  /**
+   * Si se pasa, cuando lo escrito no coincide con ninguna opción aparece
+   * "+ Agregar '<texto>'"; al elegirla se llama esta función con el texto y,
+   * si devuelve una opción, queda seleccionada. Si el alta falla o no aplica,
+   * el llamador debe manejar su propio error (ej. mostrar un toast) y
+   * devolver `undefined` para no seleccionar nada.
+   */
+  onCreateOption?: (query: string) => Promise<SearchSelectOption | undefined>;
+  createLabel?: (query: string) => string;
 }
 
 /** Combobox filtrable: escribe para buscar (ej. por SKU) y elige de la lista. */
@@ -35,6 +44,8 @@ export function SearchSelect({
   disabled = false,
   required = false,
   emptyMessage = 'Sin resultados',
+  onCreateOption,
+  createLabel = (q) => `Agregar "${q}"`,
 }: SearchSelectProps) {
   const generatedId = useId();
   const hintId = hint ? `${generatedId}-hint` : undefined;
@@ -44,6 +55,7 @@ export function SearchSelect({
 
   const [query, setQuery] = useState(selected?.label ?? '');
   const [isOpen, setIsOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -73,6 +85,25 @@ export function SearchSelect({
     onChange(String(option.value));
     setQuery(option.label);
     setIsOpen(false);
+  }
+
+  const trimmedQuery = query.trim();
+  const canCreate =
+    !!onCreateOption &&
+    trimmedQuery.length > 0 &&
+    !options.some((o) => o.label.toLowerCase() === trimmedQuery.toLowerCase());
+
+  async function handleCreate() {
+    if (!onCreateOption || creating || !trimmedQuery) return;
+    setCreating(true);
+    try {
+      const created = await onCreateOption(trimmedQuery);
+      if (created) {
+        selectOption(created);
+      }
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
@@ -125,7 +156,7 @@ export function SearchSelect({
             role="listbox"
             className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
           >
-            {filtered.length === 0 ? (
+            {filtered.length === 0 && !canCreate ? (
               <li className="px-3 py-2 text-sm text-slate-500">{emptyMessage}</li>
             ) : (
               filtered.map((option) => (
@@ -145,6 +176,23 @@ export function SearchSelect({
                   {option.label}
                 </li>
               ))
+            )}
+            {canCreate && (
+              <li
+                role="option"
+                aria-selected={false}
+                className={cn(
+                  'flex cursor-pointer items-center gap-1.5 border-t border-slate-100 px-3 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50',
+                  creating && 'pointer-events-none opacity-60',
+                )}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleCreate();
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                {creating ? 'Agregando…' : createLabel(trimmedQuery)}
+              </li>
             )}
           </ul>
         )}

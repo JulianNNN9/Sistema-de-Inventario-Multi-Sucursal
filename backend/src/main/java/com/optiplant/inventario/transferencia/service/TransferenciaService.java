@@ -22,6 +22,7 @@ import com.optiplant.inventario.transferencia.entity.Transferencia;
 import com.optiplant.inventario.transferencia.entity.TransferenciaEvento;
 import com.optiplant.inventario.transferencia.repository.TransferenciaEventoRepository;
 import com.optiplant.inventario.transferencia.repository.TransferenciaRepository;
+import com.optiplant.inventario.transferencia.repository.TransportistaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -55,6 +56,7 @@ public class TransferenciaService {
 
     private final TransferenciaRepository transferenciaRepository;
     private final TransferenciaEventoRepository transferenciaEventoRepository;
+    private final TransportistaRepository transportistaRepository;
     private final ProductoService productoService;
     private final SucursalService sucursalService;
     private final InventarioService inventarioService;
@@ -112,6 +114,10 @@ public class TransferenciaService {
         if (!transferenciaEventoRepository.existsByTransferenciaIdAndComentario(id, EVENTO_APROBADA)) {
             throw new TransferenciaInvalidaException(
                     "La transferencia no puede prepararse porque aún no ha sido aprobada");
+        }
+        if (!transportistaRepository.existsByNombreIgnoreCase(request.transportista())) {
+            throw new ValidacionException(
+                    "El transportista \"" + request.transportista() + "\" no existe en el catálogo; agrégalo primero");
         }
 
         inventarioService.registrarSalidaPorTransferencia(

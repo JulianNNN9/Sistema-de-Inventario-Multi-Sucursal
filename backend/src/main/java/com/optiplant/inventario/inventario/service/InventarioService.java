@@ -218,17 +218,16 @@ public class InventarioService {
     }
 
     /**
-     * Solo ADMIN_GENERAL puede consultar el inventario de una sucursal distinta
-     * a la propia; GERENTE_SUCURSAL y OPERADOR_INVENTARIO están acotados a su
-     * propia sucursal (a diferencia del resto de módulos de solo lectura, aquí
-     * no hay visibilidad de red para esos dos roles). {@code search} y
-     * {@code soloBajoMinimo} son filtros adicionales sobre el inventario de esa
-     * sucursal.
+     * Los tres roles pueden consultar el inventario de cualquier sucursal en
+     * modo solo lectura (Sección 2.1, RF-02): la visibilidad de red completa
+     * no se restringe a ADMIN_GENERAL aquí, a diferencia de las operaciones de
+     * escritura de este mismo servicio. {@code search} y {@code soloBajoMinimo}
+     * son filtros adicionales sobre el inventario de esa sucursal.
      */
     @Transactional(readOnly = true)
     public PageResponse<InventarioResponse> listarInventarioSucursal(Long branchId, String search,
                                                                       boolean soloBajoMinimo, Pageable pageable) {
-        currentUser.assertPuedeOperarSobreSucursal(branchId);
+        currentUser.assertPuedeVerSucursal(branchId);
         sucursalService.getEntityById(branchId);
         return PageResponse.from(
                 inventarioRepository.findBySucursalId(branchId, search, soloBajoMinimo, pageable)

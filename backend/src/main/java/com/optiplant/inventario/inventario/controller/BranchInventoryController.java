@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Consulta del inventario de una sucursal en modo solo lectura (RF-02).
- * Disponible para los tres roles, pero solo ADMIN_GENERAL puede apuntar a una
- * sucursal distinta a la propia (scope forzado en el Service). Endpoint
+ * Disponible para los tres roles con visibilidad de red completa: cualquiera
+ * puede apuntar a una sucursal distinta a la propia (Sección 2.1). Endpoint
  * separado de {@code SucursalController} para no heredar su restricción a
  * ADMIN_GENERAL.
  */

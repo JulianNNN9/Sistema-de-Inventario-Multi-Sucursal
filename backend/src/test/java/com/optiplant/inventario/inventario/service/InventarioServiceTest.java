@@ -1,7 +1,9 @@
 package com.optiplant.inventario.inventario.service;
 
+import com.optiplant.inventario.common.dto.PageResponse;
 import com.optiplant.inventario.common.exception.StockInsuficienteException;
 import com.optiplant.inventario.common.exception.ValidacionException;
+import com.optiplant.inventario.inventario.dto.InventarioResponse;
 import com.optiplant.inventario.inventario.dto.MinStockRequest;
 import com.optiplant.inventario.inventario.dto.MovimientoRequest;
 import com.optiplant.inventario.inventario.dto.MovimientoResponse;
@@ -24,6 +26,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
@@ -33,6 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -176,6 +182,22 @@ class InventarioServiceTest {
                 request(TipoMovimiento.INGRESO, MotivoMovimiento.DEVOLUCION, "20"));
 
         assertEquals(0, response.cantidadActual().compareTo(new BigDecimal("20")));
+    }
+
+    // --- listarInventarioSucursal (RF-02 / HU-02) --------------------------------
+
+    @Test
+    void listarInventarioSucursal_sucursalAjena_sePermiteLaLectura() {
+        when(sucursalService.getEntityById(2L)).thenReturn(sucursal);
+        when(inventarioRepository.findBySucursalId(eq(2L), any(), anyBoolean(), any()))
+                .thenReturn(new PageImpl<>(java.util.List.of()));
+
+        PageResponse<InventarioResponse> response =
+                inventarioService.listarInventarioSucursal(2L, null, false, PageRequest.of(0, 20));
+
+        assertEquals(0, response.content().size());
+        verify(currentUser).assertPuedeVerSucursal(2L);
+        verify(currentUser, never()).assertPuedeOperarSobreSucursal(any());
     }
 
     @Test

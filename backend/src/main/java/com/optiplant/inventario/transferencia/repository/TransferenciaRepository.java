@@ -23,7 +23,7 @@ import java.util.Optional;
 public interface TransferenciaRepository extends JpaRepository<Transferencia, Long> {
 
     @Override
-    @EntityGraph(attributePaths = {"producto", "sucursalOrigen", "sucursalDestino"})
+    @EntityGraph(attributePaths = {"producto", "sucursalOrigen", "sucursalDestino", "transportista"})
     Optional<Transferencia> findById(Long id);
 
     /**
@@ -32,7 +32,7 @@ public interface TransferenciaRepository extends JpaRepository<Transferencia, Lo
      * alguna acción y las que ya terminaron definitivamente (Sección 3,
      * {@link EstadoTransferencia#NO_TERMINALES}).
      */
-    @EntityGraph(attributePaths = {"producto", "sucursalOrigen", "sucursalDestino"})
+    @EntityGraph(attributePaths = {"producto", "sucursalOrigen", "sucursalDestino", "transportista"})
     @Query("""
             select t from Transferencia t
             where t.estado = coalesce(:estado, t.estado)
@@ -51,7 +51,7 @@ public interface TransferenciaRepository extends JpaRepository<Transferencia, Lo
      * {@link org.springframework.data.domain.Sort} estándar porque {@code urgencia}
      * se mapea como enum STRING (orden alfabético ≠ orden de severidad).
      */
-    @EntityGraph(attributePaths = {"producto", "sucursalOrigen", "sucursalDestino"})
+    @EntityGraph(attributePaths = {"producto", "sucursalOrigen", "sucursalDestino", "transportista"})
     @Query("""
             select t from Transferencia t
             where t.estado = coalesce(:estado, t.estado)
@@ -77,16 +77,16 @@ public interface TransferenciaRepository extends JpaRepository<Transferencia, Lo
             select
                 t.sucursal_origen_id as "sucursalOrigenId",
                 s.nombre as "sucursalOrigenNombre",
-                t.transportista as "transportista",
+                tr.nombre as "transportista",
                 count(*) as "cantidad",
                 avg(extract(epoch from (t.fecha_real_llegada - t.fecha_estimada_llegada)) / 3600.0) as "desviacionPromedioHoras"
             from transferencia t
             join sucursal s on s.id = t.sucursal_origen_id
-            where t.transportista is not null
-              and t.sucursal_origen_id = coalesce(:branchId, t.sucursal_origen_id)
-              and t.transportista = coalesce(:route, t.transportista)
-            group by t.sucursal_origen_id, s.nombre, t.transportista
-            order by t.sucursal_origen_id, t.transportista
+            join transportista tr on tr.id = t.transportista_id
+            where t.sucursal_origen_id = coalesce(:branchId, t.sucursal_origen_id)
+              and tr.nombre = coalesce(:route, tr.nombre)
+            group by t.sucursal_origen_id, s.nombre, tr.nombre
+            order by t.sucursal_origen_id, tr.nombre
             """, nativeQuery = true)
     List<ComplianceReportRow> complianceReport(@Param("branchId") Long branchId, @Param("route") String route);
 

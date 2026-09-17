@@ -78,8 +78,9 @@ public class Transferencia {
     @Column(nullable = false, length = 20)
     private Urgencia urgencia;
 
-    @Column(length = 120)
-    private String transportista;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transportista_id")
+    private Transportista transportista;
 
     @Column(name = "fecha_estimada_llegada")
     private Instant fechaEstimadaLlegada;

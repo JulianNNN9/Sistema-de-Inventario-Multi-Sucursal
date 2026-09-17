@@ -20,6 +20,7 @@ import com.optiplant.inventario.transferencia.dto.TransferResponse;
 import com.optiplant.inventario.transferencia.entity.EstadoTransferencia;
 import com.optiplant.inventario.transferencia.entity.Transferencia;
 import com.optiplant.inventario.transferencia.entity.TransferenciaEvento;
+import com.optiplant.inventario.transferencia.entity.Transportista;
 import com.optiplant.inventario.transferencia.repository.TransferenciaEventoRepository;
 import com.optiplant.inventario.transferencia.repository.TransferenciaRepository;
 import com.optiplant.inventario.transferencia.repository.TransportistaRepository;
@@ -115,23 +116,21 @@ public class TransferenciaService {
             throw new TransferenciaInvalidaException(
                     "La transferencia no puede prepararse porque aún no ha sido aprobada");
         }
-        if (!transportistaRepository.existsByNombreIgnoreCase(request.transportista())) {
-            throw new ValidacionException(
-                    "El transportista \"" + request.transportista() + "\" no existe en el catálogo; agrégalo primero");
-        }
+        Transportista transportista = transportistaRepository.findById(request.transportistaId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Transportista", request.transportistaId()));
 
         inventarioService.registrarSalidaPorTransferencia(
                 transferencia.getProducto(), transferencia.getSucursalOrigen(),
                 request.cantidadEnviada(), currentUser.usuarioId());
 
         transferencia.setCantidadEnviada(request.cantidadEnviada());
-        transferencia.setTransportista(request.transportista());
+        transferencia.setTransportista(transportista);
         transferencia.setFechaEstimadaLlegada(request.fechaEstimadaLlegada());
         transferencia.setCosto(request.costo());
         transferencia.setEstado(EstadoTransferencia.EN_TRANSITO);
         transferenciaRepository.save(transferencia);
         registrarEvento(transferencia, EstadoTransferencia.EN_TRANSITO,
-                "Despachada con " + request.transportista());
+                "Despachada con " + transportista.getNombre());
         return toResponse(transferencia);
     }
 
@@ -312,7 +311,8 @@ public class TransferenciaService {
                 t.getSucursalOrigen().getId(), t.getSucursalOrigen().getNombre(),
                 t.getSucursalDestino().getId(), t.getSucursalDestino().getNombre(),
                 t.getCantidadSolicitada(), t.getCantidadEnviada(), t.getCantidadRecibida(), t.getCosto(),
-                t.getEstado(), t.getUrgencia(), t.getTransportista(),
+                t.getEstado(), t.getUrgencia(),
+                t.getTransportista() != null ? t.getTransportista().getNombre() : null,
                 t.getFechaEstimadaLlegada(), t.getFechaRealLlegada(), aprobada,
                 t.getDetalleResolucion(), t.getReenvioDeId() != null);
     }

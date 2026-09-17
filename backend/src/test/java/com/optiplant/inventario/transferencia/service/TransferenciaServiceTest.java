@@ -1,5 +1,6 @@
 package com.optiplant.inventario.transferencia.service;
 
+import com.optiplant.inventario.common.exception.RecursoNoEncontradoException;
 import com.optiplant.inventario.common.exception.TransferenciaInvalidaException;
 import com.optiplant.inventario.common.exception.ValidacionException;
 import com.optiplant.inventario.inventario.service.InventarioService;
@@ -17,6 +18,7 @@ import com.optiplant.inventario.transferencia.dto.TransferResponse;
 import com.optiplant.inventario.transferencia.dto.TratamientoFaltante;
 import com.optiplant.inventario.transferencia.entity.EstadoTransferencia;
 import com.optiplant.inventario.transferencia.entity.Transferencia;
+import com.optiplant.inventario.transferencia.entity.Transportista;
 import com.optiplant.inventario.transferencia.entity.Urgencia;
 import com.optiplant.inventario.transferencia.repository.TransferenciaEventoRepository;
 import com.optiplant.inventario.transferencia.repository.TransferenciaRepository;
@@ -189,7 +191,7 @@ class TransferenciaServiceTest {
         when(transferenciaRepository.findById(99L)).thenReturn(Optional.of(transferenciaEn(EstadoTransferencia.PENDIENTE)));
         when(transferenciaEventoRepository.existsByTransferenciaIdAndComentario(eq(99L), any())).thenReturn(false);
 
-        DispatchRequest request = new DispatchRequest(new BigDecimal("15"), "Transportes", Instant.now(), new BigDecimal("50000"));
+        DispatchRequest request = new DispatchRequest(new BigDecimal("15"), 1L, Instant.now(), new BigDecimal("50000"));
 
         assertThrows(TransferenciaInvalidaException.class, () -> transferenciaService.despachar(99L, request));
         verify(inventarioService, never()).registrarSalidaPorTransferencia(any(), any(), any(), any());
@@ -197,14 +199,15 @@ class TransferenciaServiceTest {
 
     @Test
     void despachar_ok_aplicaSalidaYPasaAEnTransito() {
+        Transportista transportista = Transportista.builder().id(3L).nombre("Transportes XYZ").build();
         when(transferenciaRepository.findById(99L)).thenReturn(Optional.of(transferenciaEn(EstadoTransferencia.PENDIENTE)));
         when(transferenciaEventoRepository.existsByTransferenciaIdAndComentario(eq(99L), any())).thenReturn(true);
-        when(transportistaRepository.existsByNombreIgnoreCase("Transportes XYZ")).thenReturn(true);
+        when(transportistaRepository.findById(3L)).thenReturn(Optional.of(transportista));
         when(currentUser.usuarioId()).thenReturn(7L);
         when(transferenciaRepository.save(any(Transferencia.class))).thenAnswer(i -> i.getArgument(0));
 
         DispatchRequest request = new DispatchRequest(
-                new BigDecimal("15"), "Transportes XYZ", Instant.parse("2026-09-20T00:00:00Z"), new BigDecimal("85000"));
+                new BigDecimal("15"), 3L, Instant.parse("2026-09-20T00:00:00Z"), new BigDecimal("85000"));
         TransferResponse response = transferenciaService.despachar(99L, request);
 
         assertEquals(EstadoTransferencia.EN_TRANSITO, response.estado());
@@ -216,15 +219,15 @@ class TransferenciaServiceTest {
     }
 
     @Test
-    void despachar_transportistaFueraDelCatalogo_lanzaValidacionYNoDescuentaStock() {
+    void despachar_transportistaFueraDelCatalogo_lanzaNoEncontradoYNoDescuentaStock() {
         when(transferenciaRepository.findById(99L)).thenReturn(Optional.of(transferenciaEn(EstadoTransferencia.PENDIENTE)));
         when(transferenciaEventoRepository.existsByTransferenciaIdAndComentario(eq(99L), any())).thenReturn(true);
-        when(transportistaRepository.existsByNombreIgnoreCase("Inventado S.A.S.")).thenReturn(false);
+        when(transportistaRepository.findById(404L)).thenReturn(Optional.empty());
 
         DispatchRequest request = new DispatchRequest(
-                new BigDecimal("15"), "Inventado S.A.S.", Instant.parse("2026-09-20T00:00:00Z"), new BigDecimal("85000"));
+                new BigDecimal("15"), 404L, Instant.parse("2026-09-20T00:00:00Z"), new BigDecimal("85000"));
 
-        assertThrows(ValidacionException.class, () -> transferenciaService.despachar(99L, request));
+        assertThrows(RecursoNoEncontradoException.class, () -> transferenciaService.despachar(99L, request));
         verify(inventarioService, never()).registrarSalidaPorTransferencia(any(), any(), any(), any());
     }
 

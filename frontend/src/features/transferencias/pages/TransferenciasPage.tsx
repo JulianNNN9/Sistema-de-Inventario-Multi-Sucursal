@@ -632,12 +632,11 @@ function DispatchModal({ transfer, onClose, onDone }: DispatchModalProps) {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    const transportista = carriers.find((c) => String(c.id) === transportistaId)?.nombre;
-    if (!transfer || !fecha || !transportista) return;
+    if (!transfer || !fecha || !transportistaId) return;
     try {
       await mutate(transfer.id, {
         cantidadEnviada: Number(cantidadEnviada),
-        transportista,
+        transportistaId: Number(transportistaId),
         fechaEstimadaLlegada: new Date(fecha).toISOString(),
         costo: Number(costo),
       });

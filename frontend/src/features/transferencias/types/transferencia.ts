@@ -52,7 +52,7 @@ export interface ApproveInput {
 
 export interface DispatchInput {
   cantidadEnviada: number;
-  transportista: string;
+  transportistaId: number;
   fechaEstimadaLlegada: string;
   costo: number;
 }
